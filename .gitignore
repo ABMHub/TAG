@@ -1,0 +1,4 @@
+*.exe
+.vscode
+lixoGrafo.c
+grafo.c
