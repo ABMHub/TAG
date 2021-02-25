@@ -89,6 +89,26 @@ class Grafo {
       return visitados;
     }
 
+    void buscaLargura(Vertice vertice) {
+      set<string> set;
+      set.insert(vertice.nome);
+      list<Vertice> fila;
+      fila.push_back(vertice);
+      int i = 1;
+      while(!(fila.empty())) {
+        Vertice v = fila.front();
+        cout << "Iteracao numero " << i << ": " << v.nome << "\n";
+        for (std::list<Vertice*>::iterator it=v.lista.begin(); it != v.lista.end(); ++it){ 
+          if (set.count((*it)->nome) == 0) {
+            set.insert((*it)->nome);
+            fila.push_back(**it);
+          }
+        }
+        fila.pop_front();
+        i++;
+      }   
+    }
+
     void printGrafo() {
       for (std::list<Vertice>::iterator it = vertices.begin(); it != vertices.end(); ++it){
         cout << "Vertice: " << it->nome << "\n";
@@ -140,17 +160,20 @@ int main () {
   cout << "Grafo numero 1: \n";
   g1.printGrafo();
   cout << "\n";
-  g1.buscaProfundidade(set, g1.vertices.front());
+  // g1.buscaProfundidade(set, g1.vertices.front());
+  g1.buscaLargura(g1.vertices.front());
 
   cout << "\nGrafo numero 2: \n";
   g2.printGrafo();
   cout << "\n";
-  g2.buscaProfundidade(set, g2.vertices.front());
+  // g2.buscaProfundidade(set, g2.vertices.front());
+  g2.buscaLargura(g2.vertices.front());
 
   cout << "\nGrafo numero 3: \n";
   g3.printGrafo();
   cout << "\n";
-  g3.buscaProfundidade(set, g3.vertices.front());
+  // g3.buscaProfundidade(set, g3.vertices.front());
+  g3.buscaLargura(g3.vertices.front());
 
   return 0;
 }
