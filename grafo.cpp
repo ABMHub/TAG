@@ -4,20 +4,31 @@
 #include <list>
 #include <vector>
 #include <set>
+#include <algorithm>
 
 using namespace std;
 
+/* Classe Vertice:
+Guarda nome, lista de adjacencia e grau de cada vertice
+Usa metodo proprio para adicionar aresta entre vertices
+*/
 class Vertice {
   public:
     string nome;
     list<Vertice*> lista;
     int grau;
+
+    // Construtor
     Vertice(string nome) {
       this->nome = nome;
       this->grau = 0;
-      this->lista = {};
     }
 
+    /* 
+      Metodo para adicionar aresta
+      a flag 'bidirecional' indica se a aresta sera adicionada nas duas direcoes:
+      a->b e b->a ou apenas a->b
+    */
     void addAresta (Vertice* b, bool bidirecional) {
       // cout << "Adicionando aresta entre " << nome << " e " << b->nome << "\n";
       lista.push_back(b);
@@ -26,19 +37,50 @@ class Vertice {
         b->addAresta(this, false);
     }
 
+    // Metodo simples para printar informacoes sobre um vertice
     void printV () {
-      std::cout << nome << " " << lista.size() << " " << grau << "\n";
+      cout << nome << " " << lista.size() << " " << grau << "\n";
+    }
+
+    // Operador para comparacoes. Implementado pelo uso de std::set no programa
+    bool operator==(Vertice v) {
+      if (v.nome.compare(nome) != 0)
+        return false;
+      
+      if (v.lista != lista)
+        return false;
+      
+      return true;
+    }
+
+    // Operador para comparacoes. Implementado pelo uso de std::set no programa
+    bool operator<(Vertice v) const {
+      if (nome < v.nome) {
+        return true;
+      }
+      return false;
     }
 };
 
+/* 
+  Classe Grafo
+  Guarda uma lista de vertices presente no grafo,
+  assim como o numero de vertices adicionados
+
+  Contem varios algoritmos classicos de pesquisa e exploracao de um grafo
+*/
 class Grafo {
   public:
     list<Vertice> vertices;
     int numVertices;
+
+    // Construtor que inicia a lista de vertices vazia
     Grafo() {
       vertices = {};
       numVertices = 0;
     }
+
+    // Construtor que inicializa a lista de vertices atraves de um vetor
     Grafo(vector<string> s) {
       for (unsigned int i = 0; i < s.size(); i++) {
         addVertice(s[i]);
@@ -47,6 +89,7 @@ class Grafo {
 
     // TODO checar a existencia de um vertice com dado nome
     // TODO erro caso já exista vertice com dado nome
+    // Metodo para adicionar vertice no grafo. 
     bool addVertice (string nome) {
       Vertice v(nome);
       vertices.push_back(v);
@@ -54,10 +97,12 @@ class Grafo {
       return true;
     }
 
+    // Metodo para adicionar aresta entre dois vertices determinados pelo nome
     bool addAresta(string v1, string v2) {
       std::list<Vertice>::iterator it1;
       std::list<Vertice>::iterator it2;
       bool f1 = false, f2 = false;
+      // Loop para pegar a referencia dos dois vertices escolhidos
       for (std::list<Vertice>::iterator it = vertices.begin(); it != vertices.end(); ++it){
         if (v1.compare(it->nome) == 0) {
           f1 = true;
@@ -68,15 +113,52 @@ class Grafo {
           it2 = it;
         }
       }
+      // Caso algum vertice nao tenha sido encontrado, retorna com uma mensagem de erro
       if (!f1 || !f2) {
         cout << "Erro ao tentar montar aresta entre " << v1 << " e " << v2 << "\n"; 
         return false;
       }
+      // Adiciona aresta entre os dois vertices, com 'true' para 'bidirecional'
       it1->addAresta(&(*it2), true);
       return true;
     }
 
+    // Metodo do algoritmo de Bron-Kerbosch. Passar 'true' como parametro para pivoteamento, 'false' para sem pivoteamento
+    vector<set<Vertice>> bronKerbosch(bool pivoteamento) {
+      vector<set<Vertice>> cliquesMaximais;
+
+      // P sera o conjunto de todos os vertices do grafo
+      // Converte a lista de vertices para um conjunto de vertices, para o uso de funcoes de uniao, iterseccao e subtracao de conjuntos
+      set<Vertice> P = listToSet(vertices);
+      set<Vertice> R;
+      set<Vertice> X;
+
+      // Determina qual metodo privado sera chamado: com ou sem pivoteamento
+      if (pivoteamento)
+        bKPivo(R, P, X, &cliquesMaximais);
+      
+      else
+        bK(R, P, X, &cliquesMaximais);
+
+      // Retorna um vetor com todos os conjuntos de cliques maximais
+      return cliquesMaximais;
+    }
+
+    // Sobrecarga: se nao forem passados parametros, faz algoritmo sem pivoteamento
+    vector<set<Vertice>> bronKerbosch() {
+      vector<set<Vertice>> cliquesMaximais;
+
+      set<Vertice> R;
+      set<Vertice> P = listToSet(vertices);
+      set<Vertice> X;
+    
+      bK(R, P, X, &cliquesMaximais);
+
+      return cliquesMaximais;
+    }
+
     // ! nao funciona com grafos desconectados
+    // Realiza busca em profundidade recursivamente e printa na tela os detalhes de cada iteracao
     set<string> buscaProfundidade(set<string> visitados, Vertice vertice) {
       visitados.insert(vertice.nome);
       cout << "Iteracao numero " << visitados.size() << ": " << vertice.nome << "\n";
@@ -89,6 +171,7 @@ class Grafo {
       return visitados;
     }
 
+    // Realiza busca em largura e printa na tela os detalhes de cada iteracao
     void buscaLargura(Vertice vertice) {
       set<string> set;
       set.insert(vertice.nome);
@@ -109,6 +192,7 @@ class Grafo {
       }   
     }
 
+    // Printa os detalhes de cada vertice do grafo
     void printGrafo() {
       for (std::list<Vertice>::iterator it = vertices.begin(); it != vertices.end(); ++it){
         cout << "Vertice: " << it->nome << "\n";
@@ -118,6 +202,107 @@ class Grafo {
           cout << (*it2)->nome << " ";
         }
         cout << "\n";
+      }
+    }
+
+  private:
+    // Funcao para printar no console um clique
+    void printClique (set<Vertice> set) {
+      std::set<Vertice>::iterator it;
+      for (it = set.begin(); it != set.end(); ++it) {
+        cout << it->nome << " ";
+      }
+      cout << '\n';
+      return;
+    }
+
+    // Funcao para conversao de list para set
+    // Importante pois as funcoes de interseccao, uniao e subtracao de conjuntos requerem ordenacao, e list nao eh ordenada
+    set<Vertice> listToSet(list<Vertice*> l) {
+      set<Vertice> s;
+      if (l.empty())
+        return s;
+
+      for (list<Vertice*>::iterator it = l.begin(); it != l.end(); ++it) {
+        s.insert(**it);
+      }
+      return s;
+    }
+
+    // Sobrecarga de tipo
+    set<Vertice> listToSet(list<Vertice> l) {
+      set<Vertice> s;
+      if (l.empty())
+        return s;
+
+      for (list<Vertice>::iterator it = l.begin(); it != l.end(); ++it) {
+        s.insert(*it);
+      }
+      return s;
+    }
+
+    // Funcao para unir conjunto a com elemento b
+    set<Vertice> uniao (set<Vertice> a, Vertice b) {
+      a.insert(b);
+      return a;
+    }
+
+    // Funcao para unir conjunto a com conjunto b
+    set<Vertice> uniao (set<Vertice> a, set<Vertice> b) {
+      set<Vertice> ret;
+      set_union(a.begin(), a.end(), b.begin(), b.end(), std::inserter(ret, ret.begin()));
+      return ret;
+    }
+
+    // Funcao para adquirir a interseccao entre o conjunto a e o conjunto b
+    set<Vertice> interseccao (set<Vertice> a, set<Vertice> b) {
+      set<Vertice> ret;
+      set_intersection(a.begin(), a.end(), b.begin(), b.end(), std::inserter(ret, ret.begin()));
+      return ret;
+    }
+
+    // Funcao para executar a subtracao entre o conjunto a e o conjunto b (a / b)
+    set<Vertice> subtracao (set<Vertice> a, set<Vertice> b) {
+      set<Vertice> ret;
+      set_difference(a.begin(), a.end(), b.begin(), b.end(), std::inserter(ret, ret.begin()));
+      return ret;
+    }
+
+    // Algoritmo de Bron-Kerbosch sem pivoteamento
+    void bK (set<Vertice> R, set<Vertice> P, set<Vertice> X, vector<set<Vertice>> *cliques) {
+      // Caso ache um clique:
+      if (P.empty() && X.empty()) {
+        printClique(R);           // Printar clique no terminal
+        cliques->push_back(R);    // Adicionar clique na lista de cliques
+        return;                   // Encerrar recursao
+      }
+
+      set<Vertice> Paux = P;  // P auxiliar para iteracao
+      for (set<Vertice>::iterator it = Paux.begin(); it != Paux.end(); ++it) {
+        set<Vertice> N = listToSet(it->lista);                              // Converte a lista de adjacencia para um conjunto
+        bK(uniao(R, *it), interseccao(P, N), interseccao(X, N), cliques);   // Chamada da recursao
+        P.erase(*it);                                                       // Eliminar vertice analisado de P
+        X.insert(*it);                                                      // Inserir Vertice analisado em X
+      }
+    }
+
+    // Algoritmo de Bron-Kerbosch com pivoteamento
+    void bKPivo (set<Vertice> R, set<Vertice> P, set<Vertice> X, vector<set<Vertice>> *cliques) {
+      // Caso ache um clique:
+      if (P.empty() && X.empty()) {
+        printClique(R);           // Printar clique no terminal
+        cliques->push_back(R);    // Adicionar clique na lista de cliques
+        return;                   // Encerrar recursao
+      }
+
+      Vertice v = *(uniao(P, X).begin());    // Escolhe um vertice v de P uniao X
+      set<Vertice> Nv = listToSet(v.lista);  // Converte a lista de adjacencia de v para um conjunto
+      set<Vertice> Paux = subtracao(P, Nv);  // Iteracao ocorrera no conjunto dos elemento P / N(v)
+      for (set<Vertice>::iterator it = Paux.begin(); it != Paux.end(); ++it) {
+        set<Vertice> N = listToSet(it->lista);                              // Converte a lista de adjacencia para um conjunto
+        bK(uniao(R, *it), interseccao(P, N), interseccao(X, N), cliques);   // Chamada da recursao
+        P.erase(*it);                                                       // Eliminar vertice analisado de P
+        X.insert(*it);                                                      // Inserir Vertice analisado em X
       }
     }
 };
@@ -158,22 +343,25 @@ int main () {
   set<string> set;
 
   cout << "Grafo numero 1: \n";
-  g1.printGrafo();
+  // g1.printGrafo();
   cout << "\n";
+  g1.bronKerbosch(true);
   // g1.buscaProfundidade(set, g1.vertices.front());
-  g1.buscaLargura(g1.vertices.front());
+  // g1.buscaLargura(g1.vertices.front());
 
   cout << "\nGrafo numero 2: \n";
-  g2.printGrafo();
+  // g2.printGrafo();
   cout << "\n";
+  g2.bronKerbosch(true);
   // g2.buscaProfundidade(set, g2.vertices.front());
-  g2.buscaLargura(g2.vertices.front());
+  // g2.buscaLargura(g2.vertices.front());
 
   cout << "\nGrafo numero 3: \n";
-  g3.printGrafo();
+  // g3.printGrafo();
   cout << "\n";
+  g3.bronKerbosch(true);
   // g3.buscaProfundidade(set, g3.vertices.front());
-  g3.buscaLargura(g3.vertices.front());
+  // g3.buscaLargura(g3.vertices.front());
 
   return 0;
 }
