@@ -1,10 +1,11 @@
 // Codigo utilizado na atividade 5
 
-#include <iostream>
-#include <list>
-#include <vector>
-#include <set>
 #include <algorithm>
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include <list>
+#include <set>
 
 using namespace std;
 
@@ -37,6 +38,26 @@ class Vertice {
         b->addAresta(this, false);
     }
 
+    // Funcao para calcular o coeficiente de aglomeracao do vertice
+    float coefAglomeracao() {
+      int triangulos = 0;
+      for (list<Vertice*>::iterator it = lista.begin(); it != lista.end(); ++it) {
+        for (list<Vertice*>::iterator it2 = it; it2 != lista.end(); ++it2) {
+          // Checa se existe conexao entre dois vertices diferentes da lista de adjacencia do vertice analisado
+          if ((*it)->listHas(**it2)) 
+            triangulos++;             // caso haja conexao, encontramos um triangulo
+        }
+      }
+
+      float res;
+      if (grau == 1) 
+        res = 0;        // Caso algum vertice tenha grau 1, encontraremos uma div/0, portanto e o programa fechara com erro
+      else
+        res = ((float) (2*triangulos)) / (grau*(grau - 1));
+
+      return res;
+    }
+
     // Metodo simples para printar informacoes sobre um vertice
     void printV () {
       cout << nome << " " << lista.size() << " " << grau << "\n";
@@ -60,6 +81,17 @@ class Vertice {
       }
       return false;
     }
+
+  private:
+    // Funcao privada para checar se ha vertice v na lista de adjacentes do vertice
+    bool listHas (Vertice v) {
+      for (list<Vertice*>::iterator it = lista.begin(); it != lista.end(); ++it) {
+        if (**it == v) {  
+          return true;    // Caso o vertice v esteja na lista de adjacencia, retorna true
+        }
+      }
+      return false;       // Caso contrario, retorna false 
+    }
 };
 
 /* 
@@ -82,6 +114,7 @@ class Grafo {
 
     // Construtor que inicializa a lista de vertices atraves de um vetor
     Grafo(vector<string> s) {
+      numVertices = 0;
       for (unsigned int i = 0; i < s.size(); i++) {
         addVertice(s[i]);
       }
@@ -155,6 +188,17 @@ class Grafo {
       bK(R, P, X, &cliquesMaximais);
 
       return cliquesMaximais;
+    }
+
+    // Funcao para retornar aglomeracao media do grafo
+    float aglomeracaoMedia() {
+      float coef = 0;
+      // Calcularemos o coeficiente de aglomeracao para cada vertice e somaremos na variavel coef
+      for (list<Vertice>::iterator it = vertices.begin(); it != vertices.end(); ++it) {
+        coef += it->coefAglomeracao();  
+      }
+      // Retorna media dos coeficientes de aglomeracao
+      return coef/numVertices;
     }
 
     // ! nao funciona com grafos desconectados
@@ -345,21 +389,27 @@ int main () {
   cout << "Grafo numero 1: \n";
   // g1.printGrafo();
   cout << "\n";
-  g1.bronKerbosch(true);
+  cout << fixed;
+  cout << setprecision(3) << g1.aglomeracaoMedia();
+  // g1.bronKerbosch(true);
   // g1.buscaProfundidade(set, g1.vertices.front());
   // g1.buscaLargura(g1.vertices.front());
 
   cout << "\nGrafo numero 2: \n";
   // g2.printGrafo();
   cout << "\n";
-  g2.bronKerbosch(true);
+  cout << fixed;
+  cout << setprecision(3) << g2.aglomeracaoMedia();
+  // g2.bronKerbosch(true);
   // g2.buscaProfundidade(set, g2.vertices.front());
   // g2.buscaLargura(g2.vertices.front());
 
   cout << "\nGrafo numero 3: \n";
   // g3.printGrafo();
   cout << "\n";
-  g3.bronKerbosch(true);
+  cout << fixed;
+  cout << setprecision(3) << g3.aglomeracaoMedia();
+  // g3.bronKerbosch(true);
   // g3.buscaProfundidade(set, g3.vertices.front());
   // g3.buscaLargura(g3.vertices.front());
 
