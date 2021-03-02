@@ -1,5 +1,3 @@
-// Codigo utilizado na atividade 5
-
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
@@ -50,7 +48,7 @@ class Vertice {
       }
 
       float res;
-      if (grau == 1) 
+      if (grau <= 1) 
         res = 0;        // Caso algum vertice tenha grau 1, encontraremos uma div/0, portanto e o programa fechara com erro
       else
         res = ((float) (2*triangulos)) / (grau*(grau - 1));
@@ -389,8 +387,7 @@ int main () {
   cout << "Grafo numero 1: \n";
   // g1.printGrafo();
   cout << "\n";
-  cout << fixed;
-  cout << setprecision(3) << g1.aglomeracaoMedia();
+  cout << g1.aglomeracaoMedia();
   // g1.bronKerbosch(true);
   // g1.buscaProfundidade(set, g1.vertices.front());
   // g1.buscaLargura(g1.vertices.front());
@@ -398,8 +395,7 @@ int main () {
   cout << "\nGrafo numero 2: \n";
   // g2.printGrafo();
   cout << "\n";
-  cout << fixed;
-  cout << setprecision(3) << g2.aglomeracaoMedia();
+  cout << g2.aglomeracaoMedia();
   // g2.bronKerbosch(true);
   // g2.buscaProfundidade(set, g2.vertices.front());
   // g2.buscaLargura(g2.vertices.front());
@@ -407,8 +403,7 @@ int main () {
   cout << "\nGrafo numero 3: \n";
   // g3.printGrafo();
   cout << "\n";
-  cout << fixed;
-  cout << setprecision(3) << g3.aglomeracaoMedia();
+  cout << g3.aglomeracaoMedia();
   // g3.bronKerbosch(true);
   // g3.buscaProfundidade(set, g3.vertices.front());
   // g3.buscaLargura(g3.vertices.front());
