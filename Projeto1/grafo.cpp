@@ -68,7 +68,7 @@ bool Vertice::operator==(Vertice v) {
 
 // Operador para comparacoes. Implementado pelo uso de std::set no programa
 bool Vertice::operator<(Vertice v) const {
-  if (stoi(nome) < stoi(v.nome)) {
+  if (stoi(nome) < stoi(v.nome)) {  // Assim, os vertices estarao ordenados numericamente dentro da estrutura set
     return true;
   }
   return false;

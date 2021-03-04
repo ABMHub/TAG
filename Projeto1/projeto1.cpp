@@ -14,7 +14,7 @@ int main () {
   string str;
   bool flag = true;
 
-  // Itera no arquivo ate os dados do grafo
+  // Itera no arquivo ate a parte de dados do grafo
   while (flag) {
     getline(file, str);
     if (str.at(0) != '%')
@@ -24,14 +24,14 @@ int main () {
   // Extrai informacao da primeira linha de dados
   string delimiter = " ";
   size_t pos = 0;
-  vector<int> dados; // v[0] = 62, v[1] = 62, v[2] = 159
+  vector<int> dados; // ao final do while: v[0] = 62, v[1] = 62, v[2] = 159
   while ((pos = str.find(delimiter)) != string::npos) {
     dados.push_back(stoi(str.substr(0, pos)));
     str.erase(0, pos + delimiter.length());
   }
   dados.push_back(stoi(str));
   
-  // Instancia grafo e cria vertices
+  // Instancia grafo e cria vertices de 1 ate 62
   Grafo g;
   for (int i = 1; i <= dados[0]; i++) {
     g.addVertice(to_string(i));
@@ -48,10 +48,20 @@ int main () {
     g.addAresta(vert1, vert2);
   }
 
-
+  // Imprime o retorno do metodo de aglomeracao media do grafo.
   cout << "Coeficiente de aglomeracao medio do grafo: " << g.aglomeracaoMedia() << '\n';
 
-  vector<set<Vertice>> vec = g.bronKerbosch(false); // chamada sem pivoteamento
+  /* 
+    O algoritmo de bron-kerbosch retorna um vetor de cliques maximais
+    Cada clique maximal esta numa estrutura de conjunto (set)
+    Ou seja, vector<set<Vertice>> eh um vetor de conjuntos de vertices, cada conjunto sendo um clique maximal
+
+    Apos o metodo ser executado, chamaremos uma funcao aparte para printar no console todos os cliques
+  */
+
+  vector<set<Vertice>> vec;
+  
+  vec = g.bronKerbosch(false); // chamada sem pivoteamento
   cout << "\nBron-Kerbosch sem pivoteamento:\n";
   printCliques(vec);
 
