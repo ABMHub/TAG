@@ -33,6 +33,15 @@ class Aresta {
       return false;
       
     }
+
+    bool operator!=(const Aresta a) const {
+      if (destino != a.destino) 
+        if (peso != a.peso)
+          return true;
+
+      return false;
+      
+    }
 };
 
 class Vertice {
@@ -57,6 +66,16 @@ class Vertice {
       Aresta a(b, peso);
       lista.push_back(a);
       grau++;
+    }
+
+    void removeAresta(Vertice a) {
+      for (auto it = lista.begin(); it != lista.end(); ++it) {
+        if (*(it->destino) == a) {
+          lista.remove(*it);
+          grau--;
+          return;
+        }
+      }
     }
 
     // Funcao para calcular o coeficiente de aglomeracao do vertice
@@ -95,6 +114,16 @@ class Vertice {
       return true;
     }
 
+    bool operator!=(Vertice v) {
+      if (v.nome.compare(nome) == 0)
+        return false;
+      
+      if (v.lista == lista)
+        return false;
+      
+      return true;
+    }
+
     // Operador para comparacoes. Implementado pelo uso de std::set no programa
     bool operator<(Vertice v) const {
       if (nome < v.nome) {
@@ -103,7 +132,6 @@ class Vertice {
       return false;
     }
 
-  private:
     // Funcao privada para checar se ha vertice v na lista de adjacentes do vertice
     bool listHas (Vertice v) {
       for (list<Aresta>::iterator it = lista.begin(); it != lista.end(); ++it) {
@@ -116,25 +144,25 @@ class Vertice {
 };
 
 /* 
-  Classe Grafo
-  Guarda uma lista de vertices presente no grafo,
+  Classe Digrafo
+  Guarda uma lista de vertices presente no Digrafo,
   assim como o numero de vertices adicionados
 
-  Contem varios algoritmos classicos de pesquisa e exploracao de um grafo
+  Contem varios algoritmos classicos de pesquisa e exploracao de um Digrafo
 */
-class Grafo {
+class Digrafo {
   public:
     list<Vertice> vertices;
     int numVertices;
 
     // Construtor que inicia a lista de vertices vazia
-    Grafo() {
+    Digrafo() {
       vertices = {};
       numVertices = 0;
     }
 
     // Construtor que inicializa a lista de vertices atraves de um vetor
-    Grafo(vector<string> s) {
+    Digrafo(vector<string> s) {
       numVertices = 0;
       for (unsigned int i = 0; i < s.size(); i++) {
         addVertice(s[i]);
@@ -143,12 +171,16 @@ class Grafo {
 
     // TODO checar a existencia de um vertice com dado nome
     // TODO erro caso já exista vertice com dado nome
-    // Metodo para adicionar vertice no grafo. 
+    // Metodo para adicionar vertice no Digrafo. 
     bool addVertice (string nome) {
       Vertice v(nome);
       vertices.push_back(v);
       numVertices++;
       return true;
+    }
+
+    bool addAresta(string origem, string destino) {
+      return addAresta(origem, destino, 0);
     }
 
     // Metodo para adicionar aresta entre dois vertices determinados pelo nome
@@ -174,6 +206,46 @@ class Grafo {
       }
       // Adiciona aresta entre os dois vertices, com 'true' para 'bidirecional'
       it1->addAresta(&(*it2), peso);
+      return true;
+    }
+
+    void removeVertice(string vertice) {
+      bool f1 = false;
+      list<Vertice>::iterator it;
+      for (it = vertices.begin(); it != vertices.end() && !f1; ++it)
+        if (vertice.compare(it->nome) == 0) 
+          f1 = true;
+
+      Vertice v = *it;
+
+      for (it = vertices.begin(); it != vertices.end(); ++it) {
+        if (*it != v){
+          it->removeAresta(v);
+        }
+      }
+
+    }
+
+    bool removeAresta(string origem, string destino) {
+      std::list<Vertice>::iterator it1;
+      std::list<Vertice>::iterator it2;
+      bool f1 = false, f2 = false;
+      // Loop para pegar a referencia dos dois vertices escolhidos
+      for (std::list<Vertice>::iterator it = vertices.begin(); it != vertices.end(); ++it){
+        if (origem.compare(it->nome) == 0) {
+          f1 = true;
+          it1 = it;
+        }
+        if (destino.compare(it->nome) == 0) {
+          f2 = true;
+          it2 = it;
+        }
+      }
+      if (!f1 || !f2) {
+        cout << "Erro ao tentar remover aresta entre " << origem << " e " << destino << "\n"; 
+        return false;
+      }
+      it1->removeAresta(*it2);
       return true;
     }
 
@@ -305,8 +377,87 @@ class Grafo {
 
     }
 
+    // void ordenacaoTopologica() {
+    //   typedef struct {
+    //     Vertice v;
+    //     int grau;
+    //   } VG;
+    //   vector<VG> vec;
+
+    //   list<Vertice>::iterator it;
+    //   list<Vertice>::iterator it2;
+    //   for (it = vertices.begin(); it != vertices.end(); ++it) {
+    //     VG aux;
+    //     int grau;
+    //     for (it2 = vertices.begin(); it2 != vertices.end(); ++it2) {
+    //       if (it2->listHas(*it))
+    //         grau++;
+    //     }
+    //     aux.grau = grau;
+    //     aux.v = *it;
+    //     vec.push_back(aux);
+    //   }
+
+    //   list<Vertice> res;
+
+    //   for (int i = 0; i < vec.size(); i++) {
+    //     if (vec.at(i).grau == 0) {
+    //       res.push_back(vec.at(i).v);
+    //     }
+    //   }
+
+    //   if (res.size() == 0) {
+    //     cout << "Erro, nao ha vertice inicial\n";
+    //     return;
+    //   }
+
+    //   while (res.size() != numVertices) {
+        
+    //   }
+
+    // }
+
+    list<Vertice> ordenacaoTopologica() {
+      list<Vertice> L;
+      set<Vertice> S = listToSet(vertices);
+      set<Vertice> aux;
+
+      for(auto it = vertices.begin(); it != vertices.end(); ++it) {
+        for (auto it2 = it->lista.begin(); it2 != it->lista.end(); ++it2){
+          aux.insert(*(it2->destino));
+        }
+      }
+
+      S = subtracao(S, aux);
+
+      Digrafo d = *this;
+
+      while (!S.empty()) {
+        Vertice n = *(S.begin());
+        cout << n.nome << ' ';
+        S.erase(n);
+        L.push_back(n);
+        for (auto it = d.vertices.begin(); it != d.vertices.end(); ++it) {
+          if (n.listHas(*it)) {
+            d.removeAresta(n.nome, it->nome);
+            if (!d.hasIncoming(*it)) {
+              S.insert(*it);
+            }
+          }
+        }
+      }
+      return L;
+    }
+
+    bool hasIncoming(Vertice v) {
+      for (auto it = vertices.begin(); it != vertices.end(); ++it) {
+        if (it->listHas(v)) return true;
+      }
+      return false;
+    }
+
     // Printa os detalhes de cada vertice do grafo
-    void printGrafo() {
+    void printDigrafo() {
       for (std::list<Vertice>::iterator it = vertices.begin(); it != vertices.end(); ++it){
         cout << "Vertice: " << it->nome << "\n";
         // cout << "Grau: " << it->grau << "\n";
@@ -420,21 +571,23 @@ class Grafo {
 };
 
 int main () {
-  vector<string> v = {"1", "2", "3", "4", "5"};
-  Grafo g1(v);
-  g1.addAresta("1", "2", 8);
-  g1.addAresta("1", "3", 3);
-  g1.addAresta("1", "4", 5);
-  g1.addAresta("2", "3", 2);
-  g1.addAresta("2", "5", 5);
-  g1.addAresta("3", "2", 1);
-  g1.addAresta("3", "4", 3);
-  g1.addAresta("3", "5", 4);
-  g1.addAresta("4", "1", 6);
-  g1.addAresta("4", "5", 7);
+  vector<string> v;
+  v = {"2", "3", "5", "7", "8", "9", "10", "11"};
+  Digrafo g1(v);
 
-  // g1.printGrafo();
-  g1.floydWarshall();
+  g1.addAresta("3", "8");
+  g1.addAresta("3", "10");
+  g1.addAresta("5", "11");
+  g1.addAresta("7", "8");
+  g1.addAresta("7", "11");
+  g1.addAresta("8", "9");
+  g1.addAresta("11", "2");
+  g1.addAresta("11", "9");
+  g1.addAresta("11", "10");
+
+  // g1.printDigrafo();
+
+  g1.ordenacaoTopologica();
 
   return 0;
 }
