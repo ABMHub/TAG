@@ -169,6 +169,13 @@ class Digrafo {
       }
     }
 
+    Digrafo(list<Vertice> l) {
+      numVertices = 0;
+      for (auto it = l.begin(); it != l.end(); ++it) {
+        addVertice(it->nome);
+      }
+    }
+
     // TODO checar a existencia de um vertice com dado nome
     // TODO erro caso já exista vertice com dado nome
     // Metodo para adicionar vertice no Digrafo. 
@@ -177,6 +184,14 @@ class Digrafo {
       vertices.push_back(v);
       numVertices++;
       return true;
+    }
+
+    Vertice getVertice (string nome) {
+      for (auto it = vertices.begin(); it != vertices.end(); ++it) {
+        if (it->nome.compare(nome) == 0) {
+          return *it;
+        }
+      }
     }
 
     bool addAresta(string origem, string destino) {
@@ -294,18 +309,49 @@ class Digrafo {
       return coef/numVertices;
     }
 
-    // ! nao funciona com grafos desconectados
-    // Realiza busca em profundidade recursivamente e printa na tela os detalhes de cada iteracao
-    set<string> buscaProfundidade(set<string> visitados, Vertice vertice) {
-      visitados.insert(vertice.nome);
-      cout << "Iteracao numero " << visitados.size() << ": " << vertice.nome << "\n";
-      for (std::list<Aresta>::iterator it=vertice.lista.begin(); it != vertice.lista.end(); ++it){
-        string nome = it->destino->nome;
-        if (visitados.count(nome) == 0) {
-          visitados = buscaProfundidade(visitados, *(it->destino));
+    void kosajaruSharir() {
+      list<Vertice> ordem;
+      Digrafo inverso = inverteArestas();
+      set<string> visitados;
+      while (visitados.size() != inverso.numVertices){
+        bool flag = false;
+        for (auto it = inverso.vertices.begin(); it != inverso.vertices.end() && !flag; ++it) {
+          if (visitados.count(it->nome) == 0) {
+            ordem = uniteList(inverso.buscaProfundidade(&visitados, *it), ordem);
+            flag = true;
+          }
         }
       }
-      return visitados;
+      visitados.clear();
+      while (visitados.size() != numVertices){
+        bool flag = false;
+        for (auto it = ordem.begin(); it != ordem.end() && !flag; ++it) {
+          if (visitados.count(it->nome) == 0) {
+            list<Vertice> aux = buscaProfundidade(&visitados, getVertice(it->nome));
+            for (auto it = aux.begin(); it != aux.end(); ++it) {
+              cout << it->nome << " ";
+            }
+            cout << '\n';
+            flag = true;
+          }
+        }
+      }
+    }
+
+    // ! nao funciona com grafos desconectados
+    // Realiza busca em profundidade recursivamente e printa na tela os detalhes de cada iteracao
+    list<Vertice> buscaProfundidade(set<string>* visitados, Vertice vertice) {
+      list<Vertice> ret;
+      visitados->insert(vertice.nome);
+      // cout << "Iteracao numero " << visitados->size() << ": " << vertice.nome << "\n";
+      for (std::list<Aresta>::iterator it=vertice.lista.begin(); it != vertice.lista.end(); ++it){
+        string nome = it->destino->nome;
+        if (visitados->count(nome) == 0) {
+          ret = uniteList(buscaProfundidade(visitados, *(it->destino)), ret);
+        }
+      }
+      ret.push_front(vertice);
+      return ret;
     }
 
     // Realiza busca em largura e printa na tela os detalhes de cada iteracao
@@ -377,47 +423,7 @@ class Digrafo {
 
     }
 
-    // void ordenacaoTopologica() {
-    //   typedef struct {
-    //     Vertice v;
-    //     int grau;
-    //   } VG;
-    //   vector<VG> vec;
-
-    //   list<Vertice>::iterator it;
-    //   list<Vertice>::iterator it2;
-    //   for (it = vertices.begin(); it != vertices.end(); ++it) {
-    //     VG aux;
-    //     int grau;
-    //     for (it2 = vertices.begin(); it2 != vertices.end(); ++it2) {
-    //       if (it2->listHas(*it))
-    //         grau++;
-    //     }
-    //     aux.grau = grau;
-    //     aux.v = *it;
-    //     vec.push_back(aux);
-    //   }
-
-    //   list<Vertice> res;
-
-    //   for (int i = 0; i < vec.size(); i++) {
-    //     if (vec.at(i).grau == 0) {
-    //       res.push_back(vec.at(i).v);
-    //     }
-    //   }
-
-    //   if (res.size() == 0) {
-    //     cout << "Erro, nao ha vertice inicial\n";
-    //     return;
-    //   }
-
-    //   while (res.size() != numVertices) {
-        
-    //   }
-
-    // }
-
-    list<Vertice> ordenacaoTopologica() {
+    list<Vertice> ordenacaoTopologicaKahn() {
       list<Vertice> L;
       set<Vertice> S = listToSet(vertices);
       set<Vertice> aux;
@@ -456,6 +462,18 @@ class Digrafo {
       return false;
     }
 
+    Digrafo inverteArestas() {
+      Digrafo d(vertices);
+
+      for (auto it = vertices.begin(); it != vertices.end(); ++it) {
+        for (auto it2 = it->lista.begin(); it2 != it->lista.end(); ++it2) {
+          d.addAresta(it2->destino->nome, it->nome);
+        }
+      }
+
+      return d;
+    }
+
     // Printa os detalhes de cada vertice do grafo
     void printDigrafo() {
       for (std::list<Vertice>::iterator it = vertices.begin(); it != vertices.end(); ++it){
@@ -478,6 +496,13 @@ class Digrafo {
       }
       cout << '\n';
       return;
+    }
+
+    list<Vertice> uniteList(list<Vertice> a, list<Vertice> b) {
+      for (auto it = b.begin(); it != b.end(); ++it) {
+        a.push_back(*it);
+      }
+      return a;
     }
 
     // Funcao para conversao de list para set
@@ -572,22 +597,24 @@ class Digrafo {
 
 int main () {
   vector<string> v;
-  v = {"2", "3", "5", "7", "8", "9", "10", "11"};
+  v = {"A", "B", "C", "D", "E", "F", "G", "H"};
   Digrafo g1(v);
 
-  g1.addAresta("3", "8");
-  g1.addAresta("3", "10");
-  g1.addAresta("5", "11");
-  g1.addAresta("7", "8");
-  g1.addAresta("7", "11");
-  g1.addAresta("8", "9");
-  g1.addAresta("11", "2");
-  g1.addAresta("11", "9");
-  g1.addAresta("11", "10");
+  g1.addAresta("A", "B");
+  g1.addAresta("A", "C");
+  g1.addAresta("A", "F");
+  g1.addAresta("B", "E");
+  g1.addAresta("C", "D");
+  g1.addAresta("D", "A");
+  g1.addAresta("D", "H");
+  g1.addAresta("E", "F");
+  g1.addAresta("E", "G");
+  g1.addAresta("E", "H");
+  g1.addAresta("F", "B");
+  g1.addAresta("F", "G");
+  g1.addAresta("H", "G");
 
-  // g1.printDigrafo();
-
-  g1.ordenacaoTopologica();
+  g1.kosajaruSharir();
 
   return 0;
 }
