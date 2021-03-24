@@ -313,6 +313,7 @@ class Digrafo {
       list<Vertice> ordem;
       Digrafo inverso = inverteArestas();
       set<string> visitados;
+
       while (visitados.size() != inverso.numVertices){
         bool flag = false;
         for (auto it = inverso.vertices.begin(); it != inverso.vertices.end() && !flag; ++it) {
@@ -322,6 +323,7 @@ class Digrafo {
           }
         }
       }
+      
       visitados.clear();
       while (visitados.size() != numVertices){
         bool flag = false;

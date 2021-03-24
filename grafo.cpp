@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include <vector>
 #include <list>
 #include <set>
@@ -80,7 +81,6 @@ class Vertice {
       return false;
     }
 
-  private:
     // Funcao privada para checar se ha vertice v na lista de adjacentes do vertice
     bool listHas (Vertice v) {
       for (list<Vertice*>::iterator it = lista.begin(); it != lista.end(); ++it) {
@@ -118,6 +118,13 @@ class Grafo {
       }
     }
 
+    Grafo(list<Vertice> l) {
+      numVertices = 0;
+      for (auto it = l.begin(); it != l.end(); ++it) {
+        addVertice(it->nome);
+      }
+    }
+
     // TODO checar a existencia de um vertice com dado nome
     // TODO erro caso já exista vertice com dado nome
     // Metodo para adicionar vertice no grafo. 
@@ -152,6 +159,20 @@ class Grafo {
       // Adiciona aresta entre os dois vertices, com 'true' para 'bidirecional'
       it1->addAresta(&(*it2), true);
       return true;
+    }
+
+    Grafo grafoComplementar() {
+      Grafo ret(vertices);
+      for (auto it = vertices.begin(); it != vertices.end(); ++it) {
+        for (auto it2 = it; it2 != vertices.end(); ++it2) {
+          if (it2->nome.compare(it->nome) != 0) {
+            if (!(it->listHas(*it2))) {
+              ret.addAresta(it->nome, it2->nome);
+            }
+          }
+        }
+      }
+      return ret;
     }
 
     // Metodo do algoritmo de Bron-Kerbosch. Passar 'true' como parametro para pivoteamento, 'false' para sem pivoteamento
@@ -247,9 +268,26 @@ class Grafo {
       }
     }
 
-  private:
+    void coberturaMinima () {
+      Grafo g = grafoComplementar();
+      auto cliques = g.bronKerbosch();
+
+      int max = 0;
+      for (unsigned int i = 0; i < cliques.size(); i++) {
+        if (max < cliques.at(i).size())
+          max = i;
+      }
+      
+      auto cliqueMaximo = cliques.at(max);
+      for (auto it = vertices.begin(); it != vertices.end(); ++it) {
+        if (cliqueMaximo.count(*it) == 0) {
+          cout << it->nome << ' ';
+        }
+      }
+    }
+
     // Funcao para printar no console um clique
-    void printClique (set<Vertice> set) {
+    static void printClique (set<Vertice> set) {
       std::set<Vertice>::iterator it;
       for (it = set.begin(); it != set.end(); ++it) {
         cout << it->nome << " ";
@@ -258,6 +296,7 @@ class Grafo {
       return;
     }
 
+  private:
     // Funcao para conversao de list para set
     // Importante pois as funcoes de interseccao, uniao e subtracao de conjuntos requerem ordenacao, e list nao eh ordenada
     set<Vertice> listToSet(list<Vertice*> l) {
@@ -269,6 +308,14 @@ class Grafo {
         s.insert(**it);
       }
       return s;
+    }
+
+    bool graphHas(Vertice v) {
+      for (auto it = vertices.begin(); it != vertices.end(); ++it) {
+        if (it->nome == v.nome)
+          return true;
+      }
+      return false;
     }
 
     // Sobrecarga de tipo
@@ -314,7 +361,7 @@ class Grafo {
     void bK (set<Vertice> R, set<Vertice> P, set<Vertice> X, vector<set<Vertice>> *cliques) {
       // Caso ache um clique:
       if (P.empty() && X.empty()) {
-        printClique(R);           // Printar clique no terminal
+        // printClique(R);           // Printar clique no terminal
         cliques->push_back(R);    // Adicionar clique na lista de cliques
         return;                   // Encerrar recursao
       }
@@ -332,7 +379,7 @@ class Grafo {
     void bKPivo (set<Vertice> R, set<Vertice> P, set<Vertice> X, vector<set<Vertice>> *cliques) {
       // Caso ache um clique:
       if (P.empty() && X.empty()) {
-        printClique(R);           // Printar clique no terminal
+        // printClique(R);           // Printar clique no terminal
         cliques->push_back(R);    // Adicionar clique na lista de cliques
         return;                   // Encerrar recursao
       }
@@ -350,63 +397,46 @@ class Grafo {
 };
 
 int main () {
-  vector<string> v = {"v", "d", "b", "c", "e"};
-  Grafo g1(v);
-  g1.addAresta("b", "v");
-  g1.addAresta("b", "c");
-  g1.addAresta("b", "d");
-  g1.addAresta("b", "e");
-  g1.addAresta("v", "d");
-  g1.addAresta("v", "c");
-  g1.addAresta("v", "e");
-  g1.addAresta("c", "e");
-  g1.addAresta("e", "d");
+  // Cria objeto de arquivo
+  for (int i = 1; i <= 7; i++) {
+    string arquivo = "grafo" + to_string(i) + ".txt";
 
-  v = {"v", "a", "b", "c", "d", "e"};
-  Grafo g2(v);  
-  g2.addAresta("e", "d");
-  g2.addAresta("e", "a");
-  g2.addAresta("v", "d");
-  g2.addAresta("v", "a");
-  g2.addAresta("d", "b");
-  g2.addAresta("a", "b");
-  g2.addAresta("c", "b");
+    ifstream file(arquivo);
+    string str;
+    getline(file, str);
 
-  v = {"v", "a", "b", "c", "d", "e", "f", "g"};
-  Grafo g3(v);  
-  g3.addAresta("v", "b");
-  g3.addAresta("v", "a");
-  g3.addAresta("v", "c");
-  g3.addAresta("c", "e");
-  g3.addAresta("c", "d");
-  g3.addAresta("d", "f");
-  g3.addAresta("d", "g");
+    // Extrai informacao da primeira linha de dados
+    string delimiter = " ";
+    size_t pos = 0;
+    vector<int> dados; // ao final do while: v[0] = 62, v[1] = 62, v[2] = 159
+    while ((pos = str.find(delimiter)) != string::npos) {
+      dados.push_back(stoi(str.substr(0, pos)));
+      str.erase(0, pos + delimiter.length());
+    }
+    dados.push_back(stoi(str));
+    
+    // Instancia grafo e cria vertices de 1 ate 62
+    Grafo g;
+    for (int i = 1; i <= dados[0]; i++) {
+      g.addVertice(to_string(i));
+    }
 
-  set<string> set;
+    // Adiciona arestas aos vertices a partir do arquivo
+    for (int i = 0; i < dados[2]; i++) {
+      string vert1, vert2;
+      getline(file, vert1);
+      size_t pos = vert1.find(delimiter);
+      vert2 = vert1.substr(0, pos);
+      vert1.erase(0, pos + delimiter.length());
 
-  cout << "Grafo numero 1: \n";
-  // g1.printGrafo();
-  cout << "\n";
-  cout << g1.aglomeracaoMedia();
-  // g1.bronKerbosch(true);
-  // g1.buscaProfundidade(set, g1.vertices.front());
-  // g1.buscaLargura(g1.vertices.front());
+      g.addAresta(vert1, vert2);
+    }
 
-  cout << "\nGrafo numero 2: \n";
-  // g2.printGrafo();
-  cout << "\n";
-  cout << g2.aglomeracaoMedia();
-  // g2.bronKerbosch(true);
-  // g2.buscaProfundidade(set, g2.vertices.front());
-  // g2.buscaLargura(g2.vertices.front());
+    g.coberturaMinima();
+    // g.printGrafo();
 
-  cout << "\nGrafo numero 3: \n";
-  // g3.printGrafo();
-  cout << "\n";
-  cout << g3.aglomeracaoMedia();
-  // g3.bronKerbosch(true);
-  // g3.buscaProfundidade(set, g3.vertices.front());
-  // g3.buscaLargura(g3.vertices.front());
+    cout << '\n';
+  }
 
   return 0;
 }
