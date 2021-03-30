@@ -10,7 +10,7 @@ using namespace std;
 
 int main () {
   // Cria objeto de arquivo
-  ifstream file("soc-dolphins.mtx ");
+  ifstream file("soc-dolphins.mtx");
   string str;
   bool flag = true;
 

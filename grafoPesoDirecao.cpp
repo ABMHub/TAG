@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <vector>
 #include <string>
@@ -17,10 +18,12 @@ class Vertice;
 
 class Aresta {
   public:
+    Vertice* origem;
     Vertice* destino;
     int peso;
 
-    Aresta(Vertice* destino, int peso) {
+    Aresta(Vertice* origem, Vertice* destino, int peso) {
+      this->origem = origem;
       this->destino = destino;
       this->peso = peso;
     }
@@ -42,6 +45,28 @@ class Aresta {
       return false;
       
     }
+    
+    bool operator<(const Aresta a) const {
+      if (peso < a.peso)
+        return true;
+      
+      else if (peso == a.peso)
+        if (destino < a.destino)
+          return true;
+
+      return false;
+    }
+
+    bool operator>(const Aresta a) const {
+      if (peso > a.peso)
+        return true;
+      
+      else if (peso == a.peso)
+        if (destino > a.destino)
+          return true;
+
+      return false;
+    }
 };
 
 class Vertice {
@@ -61,11 +86,12 @@ class Vertice {
       a flag 'bidirecional' indica se a aresta sera adicionada nas duas direcoes:
       a->b e b->a ou apenas a->b
     */
-    void addAresta (Vertice* b, int peso) {
+    Aresta addAresta (Vertice* b, int peso) {
       // cout << "Adicionando aresta entre " << nome << " e " << b->nome << "\n";
-      Aresta a(b, peso);
+      Aresta a(this, b, peso);
       lista.push_back(a);
       grau++;
+      return a;
     }
 
     void removeAresta(Vertice a) {
@@ -84,10 +110,12 @@ class Vertice {
       for (list<Aresta>::iterator it = lista.begin(); it != lista.end(); ++it) {
         for (list<Aresta>::iterator it2 = it; it2 != lista.end(); ++it2) {
           // Checa se existe conexao entre dois vertices diferentes da lista de adjacencia do vertice analisado
-          if (it->destino->listHas(*(it->destino))) 
+          if (it->destino->listHas(*(it2->destino))) 
             triangulos++;             // caso haja conexao, encontramos um triangulo
         }
       }
+
+      cout << triangulos << ' ' << grau << '\n';
 
       float res;
       if (grau <= 1) 
@@ -132,6 +160,13 @@ class Vertice {
       return false;
     }
 
+    bool operator>(Vertice v) const {
+      if (nome > v.nome) {
+        return true;
+      }
+      return false;
+    }
+
     // Funcao privada para checar se ha vertice v na lista de adjacentes do vertice
     bool listHas (Vertice v) {
       for (list<Aresta>::iterator it = lista.begin(); it != lista.end(); ++it) {
@@ -153,6 +188,7 @@ class Vertice {
 class Digrafo {
   public:
     list<Vertice> vertices;
+    list<Aresta> arestas;
     int numVertices;
 
     // Construtor que inicia a lista de vertices vazia
@@ -176,6 +212,48 @@ class Digrafo {
       }
     }
 
+    static Digrafo leArquivo (string fileStr, bool bidirecionado) {
+      ifstream file(fileStr);
+      string str;
+      bool flag = true;
+
+      // Itera no arquivo ate a parte de dados do grafo
+      while (flag) {
+        getline(file, str);
+        if (str.at(0) != '%')
+          flag = false;
+      }
+
+      // Extrai informacao da primeira linha de dados
+      string delimiter = " ";
+      size_t pos = 0;
+      vector<int> dados; // ao final do while: v[0] = 62, v[1] = 62, v[2] = 159
+      while ((pos = str.find(delimiter)) != string::npos) {
+        dados.push_back(stoi(str.substr(0, pos)));
+        str.erase(0, pos + delimiter.length());
+      }
+      dados.push_back(stoi(str));
+      
+      // Instancia grafo e cria vertices de 1 ate 62
+      Digrafo g;
+      for (int i = 1; i <= dados[0]; i++) {
+        g.addVertice(to_string(i));
+      }
+
+      // Adiciona arestas aos vertices a partir do arquivo
+      for (int i = 0; i < dados[2]; i++) {
+        string vert1, vert2;
+        getline(file, vert1);
+        size_t pos = vert1.find(delimiter);
+        vert2 = vert1.substr(0, pos);
+        vert1.erase(0, pos + delimiter.length());
+
+        g.addAresta(vert1, vert2, 0, bidirecionado);
+      }
+
+      return g;
+    }
+
     // TODO checar a existencia de um vertice com dado nome
     // TODO erro caso já exista vertice com dado nome
     // Metodo para adicionar vertice no Digrafo. 
@@ -195,11 +273,15 @@ class Digrafo {
     }
 
     bool addAresta(string origem, string destino) {
-      return addAresta(origem, destino, 0);
+      return addAresta(origem, destino, 0, false);
+    }
+
+    bool addAresta(string origem, string destino, int peso) {
+      return addAresta(origem, destino, peso, false);
     }
 
     // Metodo para adicionar aresta entre dois vertices determinados pelo nome
-    bool addAresta(string origem, string destino, int peso) {
+    bool addAresta(string origem, string destino, int peso, bool bidirecional) {
       std::list<Vertice>::iterator it1;
       std::list<Vertice>::iterator it2;
       bool f1 = false, f2 = false;
@@ -220,7 +302,10 @@ class Digrafo {
         return false;
       }
       // Adiciona aresta entre os dois vertices, com 'true' para 'bidirecional'
-      it1->addAresta(&(*it2), peso);
+      arestas.push_back(it1->addAresta(&(*it2), peso));
+      if (bidirecional)
+        arestas.push_back(it2->addAresta(&(*it1), peso));
+
       return true;
     }
 
@@ -241,6 +326,7 @@ class Digrafo {
 
     }
 
+    // ! nao remove aresta da lista de arestas
     bool removeAresta(string origem, string destino) {
       std::list<Vertice>::iterator it1;
       std::list<Vertice>::iterator it2;
@@ -457,6 +543,71 @@ class Digrafo {
       return L;
     }
 
+    void Prim() {
+      list<Aresta> arestasOrdenadas = arestas;
+      arestasOrdenadas.sort();
+
+      set<Vertice> s;
+      list<Aresta> v;
+      Aresta aresta = *(arestasOrdenadas.begin());
+      s.insert(*(aresta.origem));
+      s.insert(*(aresta.destino));
+      v.push_back(aresta);
+      arestasOrdenadas.pop_front();
+
+      bool flag = false;
+      while (!flag) {
+        flag = true;
+        for (auto it = arestasOrdenadas.begin(); it != arestasOrdenadas.end() && flag; ++it) {
+          if (s.count(*(it->origem)) + s.count(*(it->destino)) == 1) {
+            flag = false;
+            v.push_back(*it);
+            s.insert(*(it->origem));
+            s.insert(*(it->destino));
+          }
+        }
+      }
+
+      for (auto it = v.begin(); it != v.end(); ++it) {
+        cout << it->origem->nome << ' ' << it->destino->nome << '\n';
+      }
+    }
+
+    // ! necessario terminar o codigo
+    // void Kruskal() {
+    //   list<Aresta> arestasOrdenadas = arestas;
+    //   arestasOrdenadas.sort();
+
+    //   set<Vertice> s;
+    //   list<Aresta> v;
+    //   Aresta aresta = *(arestasOrdenadas.begin());
+    //   s.insert(*(aresta.origem));
+    //   s.insert(*(aresta.destino));
+    //   v.push_back(aresta);
+    //   arestasOrdenadas.pop_front();
+
+    //   bool flag = false;
+    //   while (!flag) {
+    //     flag = true;
+    //     for (auto it = arestasOrdenadas.begin(); it != arestasOrdenadas.end() && flag; ++it) {
+    //       int contador = s.count(*(it->origem)) + s.count(*(it->destino));
+    //       if (contador <= 0) {
+    //         flag = false;
+    //         v.push_back(*it);
+    //         s.insert(*(it->origem));
+    //         s.insert(*(it->destino));
+    //       }
+    //       else {
+
+    //       }
+    //     }
+    //   }
+
+    //   for (auto it = v.begin(); it != v.end(); ++it) {
+    //     cout << it->origem->nome << ' ' << it->destino->nome << '\n';
+    //   }
+    // }
+
     bool hasIncoming(Vertice v) {
       for (auto it = vertices.begin(); it != vertices.end(); ++it) {
         if (it->listHas(v)) return true;
@@ -598,25 +749,21 @@ class Digrafo {
 };
 
 int main () {
-  vector<string> v;
-  v = {"A", "B", "C", "D", "E", "F", "G", "H"};
-  Digrafo g1(v);
+  vector<string> v = {"A", "B", "C", "D", "E", "F", "G"};
+  Digrafo g(v);
 
-  g1.addAresta("A", "B");
-  g1.addAresta("A", "C");
-  g1.addAresta("A", "F");
-  g1.addAresta("B", "E");
-  g1.addAresta("C", "D");
-  g1.addAresta("D", "A");
-  g1.addAresta("D", "H");
-  g1.addAresta("E", "F");
-  g1.addAresta("E", "G");
-  g1.addAresta("E", "H");
-  g1.addAresta("F", "B");
-  g1.addAresta("F", "G");
-  g1.addAresta("H", "G");
+  g.addAresta("A", "B", 7, true);
+  g.addAresta("A", "C", 9, true);
+  g.addAresta("A", "F", 8, true);
+  g.addAresta("B", "C", 3, true);
+  g.addAresta("B", "D", 6, true);
+  g.addAresta("C", "E", 10, true);
+  g.addAresta("D", "G", 9, true);
+  g.addAresta("E", "G", 4, true);
+  g.addAresta("E", "F", 5, true);
+  g.addAresta("F", "G", 8, true);
 
-  g1.kosajaruSharir();
+  g.Prim();
 
   return 0;
 }
