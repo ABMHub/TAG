@@ -464,7 +464,7 @@ class Digrafo {
     }
 
     void floydWarshall () {
-      int matriz[numVertices][numVertices];
+      vector<vector<int>> matriz = criaMatriz(numVertices, numVertices);
       for (int i = 0; i < numVertices; i++) {
         for (int j = 0; j < numVertices; j++) {
           if (i == j)
@@ -479,6 +479,9 @@ class Digrafo {
         }
       }
 
+      printMatriz(matriz);
+      cout << "\n\n";
+
       for (int k = 0; k < numVertices; k++) {
         for (int i = 0; i < numVertices; i++) {
           for (int j = 0; j < numVertices; j++) {
@@ -487,28 +490,9 @@ class Digrafo {
             }
           }
         }
+        printMatriz(matriz);
+        cout << "\n\n";
       }
-
-      cout << "    ";
-      for (int i = 0; i < numVertices; i++) {
-        cout << i+1 << "  ";
-      }
-      cout << "\n\n";
-      for (int i = 0; i < numVertices; i++) {
-        cout << i+1 << "   ";
-        for (int j = 0; j < numVertices; j++) {
-          if (matriz[i][j] == 10000)
-            cout << "/" << "  ";
-            
-          else if (matriz[i][j] >= 10)
-            cout << matriz[i][j] << " ";
-
-          else 
-            cout << matriz[i][j] << "  ";
-        }
-        cout << '\n';
-      }
-
     }
 
     list<Vertice> ordenacaoTopologicaKahn() {
@@ -640,6 +624,18 @@ class Digrafo {
       }
     }
 
+    static vector<vector<int>> criaMatriz(int alt, int larg) {
+      vector<vector<int>> m;
+      for (int i = 0; i < alt; i++) {
+        vector<int> n;
+        for (int j = 0; j < larg; j++) {
+          n.push_back(0);
+        }
+        m.push_back(n);
+      }
+      return m;
+    }
+
   private:
     // Funcao para printar no console um clique
     void printClique (set<Vertice> set) {
@@ -649,6 +645,28 @@ class Digrafo {
       }
       cout << '\n';
       return;
+    }
+
+    void printMatriz(vector<vector<int>> matriz) {
+      cout << "    ";
+      for (int i = 0; i < numVertices; i++) {
+        cout << i+1 << "  ";
+      }
+      cout << "\n\n";
+      for (int i = 0; i < numVertices; i++) {
+        cout << i+1 << "   ";
+        for (int j = 0; j < numVertices; j++) {
+          if (matriz[i][j] == 10000)
+            cout << "/" << "  ";
+            
+          else if (matriz[i][j] >= 10)
+            cout << matriz[i][j] << " ";
+
+          else 
+            cout << matriz[i][j] << "  ";
+        }
+        cout << '\n';
+      }
     }
 
     list<Vertice> uniteList(list<Vertice> a, list<Vertice> b) {
@@ -749,21 +767,20 @@ class Digrafo {
 };
 
 int main () {
-  vector<string> v = {"A", "B", "C", "D", "E", "F", "G"};
+  vector<string> v = {"1", "2", "3", "4", "5"};
   Digrafo g(v);
 
-  g.addAresta("A", "B", 7, true);
-  g.addAresta("A", "C", 9, true);
-  g.addAresta("A", "F", 8, true);
-  g.addAresta("B", "C", 3, true);
-  g.addAresta("B", "D", 6, true);
-  g.addAresta("C", "E", 10, true);
-  g.addAresta("D", "G", 9, true);
-  g.addAresta("E", "G", 4, true);
-  g.addAresta("E", "F", 5, true);
-  g.addAresta("F", "G", 8, true);
+  g.addAresta("1", "2", 3, false);
+  g.addAresta("1", "3", 8, false);
+  g.addAresta("1", "5", -4, false);
+  g.addAresta("2", "4", 1, false);
+  g.addAresta("2", "5", 7, false);
+  g.addAresta("3", "2", 4, false);
+  g.addAresta("4", "1", 2, false);
+  g.addAresta("4", "3", -5, false);
+  g.addAresta("5", "4", 6, false);
 
-  g.Prim();
+  g.floydWarshall();
 
   return 0;
 }
