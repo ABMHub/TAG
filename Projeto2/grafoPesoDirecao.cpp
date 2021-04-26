@@ -26,11 +26,13 @@ class Aresta {
     Vertice* origem;
     Vertice* destino;
     int prioridade;
+    int vaga;
 
-    Aresta(Vertice* origem, Vertice* destino, int prioridade) {
+    Aresta(Vertice* origem, Vertice* destino, int prioridade, int vaga) {
       this->origem = origem;
       this->destino = destino;
       this->prioridade = prioridade;
+      this->vaga = vaga;
     }
 
     bool operator==(const Aresta a) const {
@@ -91,10 +93,13 @@ class Vertice {
       a flag 'bidirecional' indica se a aresta sera adicionada nas duas direcoes:
       a->b e b->a ou apenas a->b
     */
-    Aresta addAresta (Vertice* b, int prioridade) {
+    Aresta addAresta (Vertice* b, int prioridade, int vaga) {
       // cout << "Adicionando aresta entre " << nome << " e " << b->nome << "\n";
-      Aresta a(this, b, prioridade);
-      lista.push_back(a);
+      Aresta a(this, b, prioridade, vaga);
+      if (vaga == 0)
+        lista.push_front(a);
+      else 
+        lista.push_back(a);
       grau++;
       return a;
     }
@@ -349,7 +354,8 @@ class Grafo {
     }
 
     // Metodo para adicionar aresta entre dois vertices determinados pelo nome
-    bool addAresta(string origem, string destino, int prioridade) {
+    bool addAresta(string origem, string destino, int prioridade, int vaga) {
+      // cout << "Add aresta " << origem << " " << destino << " " << prioridade << "\n";
       std::list<Vertice>::iterator it1;
       std::list<Vertice>::iterator it2;
       bool f1 = false, f2 = false;
@@ -370,8 +376,8 @@ class Grafo {
         return false;
       }
       // Adiciona aresta entre os dois vertices, com 'true' para 'bidirecional'
-      arestas.push_back(it1->addAresta(&(*it2), prioridade));
-      arestas.push_back(it2->addAresta(&(*it1), prioridade));
+      arestas.push_back(it1->addAresta(&(*it2), prioridade, vaga));
+      arestas.push_back(it2->addAresta(&(*it1), prioridade, vaga));
 
       return true;
     }
@@ -487,7 +493,7 @@ void apagaPreferencias(vector<Professor> *p, vector<Escola> *e) {
     for (int j = 0; j < preferencias.size(); j++) {
       string nomeEscola = preferencias[j].nome;
       int numEscola = stoi(nomeEscola.erase(0, 1));
-      Escola esc = e->at(numEscola - 1); // ! testar
+      Escola esc = e->at(numEscola - 1);
       if (!esc.escolaAceitaHab(prof.habilitacao)) {
         preferencias.erase(preferencias.begin() + j);
         j--;
@@ -522,7 +528,7 @@ int converteString(string nome) {
 }
 
 int getProfessor(vector<Professor> v, string nome) {
-  cout << nome << "\n";
+  // cout << nome << "\n";
   for (int i = 0; i < v.size(); i++) {
     if (v[i].nome == nome)
       return i;
@@ -585,43 +591,109 @@ prioridade procuraEscolaDisponivel(Professor p, vector<Escola> e, Grafo* g) {
 //   }
 // }
 
-bool podeAlocar(Professor prof, Escola esc, int rank, Grafo *g, vector<Professor> *alocados, vector<Professor> *desalocados) {
-  Vertice v = g->getVertice(esc.nome);
-  if (v.grau < esc.habilitacao.size()) {
-    return true;
-  }
+bool disputaDeVagas(Professor prof, Professor profAntigo, Escola esc, Vertice v, int vaga, int rank) {
+  if (esc.habilitacao[vaga] > prof.habilitacao)
+    return false;
+
   else {
-    bool flag = false;
-    string antigoProf;
-    int primeiroRank;
-    int primeiroHab;
-    for (auto it = v.lista.begin(); it != v.lista.end(); it++) {
-      auto aresta = *it;
-      if (rank < aresta.prioridade) {
-        if (flag == true) {
-          if (aresta.prioridade > primeiroRank) {
-            antigoProf = aresta.destino->nome;
-          }
-          else if (aresta.prioridade == primeiroRank && primeiroHab < alocados->at(getProfessor(*alocados, aresta.destino->nome)).habilitacao) {
-            antigoProf = aresta.destino->nome;
-          }
-        }
-        else {
-          antigoProf = aresta.destino->nome;
-          primeiroRank = aresta.prioridade;
-          primeiroHab = alocados->at(getProfessor(*alocados, aresta.destino->nome)).habilitacao;
-        }
-        flag = true;
-      }
+    list<Aresta>::iterator disputada;
+    if (vaga == 0)
+      disputada = v.lista.begin();
+    else {
+      disputada = v.lista.end();
+      disputada--;
     }
-    if (flag) {
-      g->removeAresta(antigoProf, esc.nome);
-      int pos = getProfessor(*alocados, antigoProf);
-      desalocados->push_back(alocados->at(pos));
-      alocados->erase(alocados->begin() + pos);
+
+    
+
+    // cout << vaga  << " ";
+    // cout << prof.nome << " vs " << disputada->destino->nome << "\n";
+
+    if (rank < disputada->prioridade || 
+      (rank == disputada->prioridade && 
+      prof.habilitacao < profAntigo.habilitacao)
+    ) {
+      // cout << rank << " " << disputada->prioridade << "\n";
+      // cout << "true\n";
       return true;
     }
-      cout << 'c';
+
+    // cout << "false\n";
+    return false;
+  }
+}
+
+// bool podeAlocar(Professor prof, Escola esc, int rank, Grafo *g, vector<Professor> *alocados, vector<Professor> *desalocados) {
+//   Vertice v = g->getVertice(esc.nome);
+//   if (esc.habilitacao.size() == 1) {
+//     if (v.grau == 0) {
+//       aloca(prof, esc, g, alocados, desalocados, vaga);
+//     }
+//     else {
+//       auto aresta = *v.lista.begin();
+//       if (rank < aresta.prioridade) {
+//         string antigoProf = 
+//         g->removeAresta(antigoProf, esc.nome);
+//         int pos = getProfessor(*alocados, antigoProf);
+//         desalocados->push_back(alocados->at(pos));
+//         alocados->erase(alocados->begin() + pos);
+//         return true;
+//       }
+//     }
+//   }
+//   else {
+//     1 + 1;
+//   }
+//   if (true) {
+//     bool flag = false;
+//     string antigoProf;
+//     int primeiroRank;
+//     int primeiroHab;
+//     for (auto it = v.lista.begin(); it != v.lista.end(); it++) {
+//       auto aresta = *it;
+//       if (rank < aresta.prioridade) {
+//         if (flag == true) {
+//           if (aresta.prioridade > primeiroRank) {
+//             antigoProf = aresta.destino->nome;
+//           }
+//           else if (aresta.prioridade == primeiroRank && primeiroHab < alocados->at(getProfessor(*alocados, aresta.destino->nome)).habilitacao) {
+//             antigoProf = aresta.destino->nome;
+//           }
+//         }
+//         else {
+//           antigoProf = aresta.destino->nome;
+//           primeiroRank = aresta.prioridade;
+//           primeiroHab = alocados->at(getProfessor(*alocados, aresta.destino->nome)).habilitacao;
+//         }
+//         flag = true;
+//       }
+//     }
+//     if (flag) {
+//       g->removeAresta(antigoProf, esc.nome);
+//       int pos = getProfessor(*alocados, antigoProf);
+//       desalocados->push_back(alocados->at(pos));
+//       alocados->erase(alocados->begin() + pos);
+//       return true;
+//     }
+//       cout << 'c';
+//   }
+//   return false;
+// }
+
+string getVagaOcupada(Vertice v, int vaga) {
+  for (auto i = v.lista.begin(); i != v.lista.end(); i++)  {
+    if (i->vaga == vaga) {
+      return i->destino->nome;
+    }
+  }
+  return "";
+}
+
+bool isVagaOcupada (Vertice v, int vaga) {
+  for (auto i = v.lista.begin(); i != v.lista.end(); i++) {
+    if (i->vaga == vaga) {
+      return true;
+    }
   }
   return false;
 }
@@ -631,24 +703,56 @@ void emparelhamento(vector<Professor> desalocados, vector<Escola> e, Grafo *g) {
   bool flag = false;
   while (!flag) {
     flag = true;
+    cout << "iteracao do while \n";
+
     for (int i = 0; i < desalocados.size(); i++) {
+      // cout << "iteracao do for i \n";
       Professor prof = desalocados[i];
       bool alocado = false;
+
       for (int j = 0; j < prof.escolas.size() && !alocado; j++) {
+        // cout << "iteracao do for j \n";
+
         prioridade pri = prof.escolas[j];
-        if (podeAlocar(prof, getEscola(e, pri.nome), pri.rank, g, &alocados, &desalocados)){
-          g->addAresta(prof.nome, pri.nome, pri.rank);
-          desalocados.erase(desalocados.begin() + i);
-          alocados.push_back(prof);
-          i--;
-          alocado = true;
-          flag = false;
+        Escola esc = getEscola(e, pri.nome);
+        Vertice v = g->getVertice(esc.nome);
+
+        for (int k = 0; k < esc.habilitacao.size() && !alocado; k++) {
+          // g->printGrafo();
+          // cout << "iteracao do for k \n";
+          if (esc.habilitacao[k] <= prof.habilitacao) {
+            if (!isVagaOcupada(v, k)) {
+              desalocados.erase(desalocados.begin() + i);
+              alocados.push_back(prof);
+              g->addAresta(prof.nome, esc.nome, j, k);
+
+              i--;
+              alocado = true;
+              // flag = false;
+            }
+            else {
+              int pos = getProfessor(alocados, getVagaOcupada(v, k));
+              Professor profAntigo = alocados[pos];
+              if (disputaDeVagas(prof, profAntigo, esc, v, k, j)) {
+                cout << "Professor " << prof.nome << " pega a vaga do professor " << profAntigo.nome << "\n";
+                alocados.erase(alocados.begin() + pos);
+                desalocados.push_back(profAntigo);
+                g->removeAresta(esc.nome, profAntigo.nome);
+
+                desalocados.erase(desalocados.begin() + i);
+                alocados.push_back(prof);
+                g->addAresta(prof.nome, esc.nome, j, k);
+                i--;
+                alocado = true;
+                // flag = false;
+              }
+            }
+          }
         }
       }
-      cout << 'b';
     }
-      cout << 'a';
   }
+  cout << "Professores alocados: " << alocados.size() << "\n";
 }
 
 int main () {
