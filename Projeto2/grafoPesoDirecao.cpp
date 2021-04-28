@@ -9,11 +9,11 @@
 
 using namespace std;
 
-/* Classe Vertice:
-Guarda nome, lista de adjacencia e grau de cada vertice
-Usa metodo proprio para adicionar aresta entre vertices
+/*
+  Struct prioridade serve para guardar o nome e a prioridade de uma escola
+  Eh usada junto com a classe professor, para montar sua lista de prioridades
+  Essencial para guardar o rank prioridade mesmo se a estrutura da lista for alterada
 */
-
 typedef struct prioridade {
   string nome;
   int rank;
@@ -21,6 +21,11 @@ typedef struct prioridade {
 
 class Vertice;
 
+/*
+  Classe Aresta serve para guardar informacoes associadas a uma aresta de um grafo
+  Para este projeto, a aresta guarda o numero da vaga ocupada pela associacao escola-professor,
+  assim como o grau de prioridade que o professor da a essa escola, alem do endereco oridem e destino dos vertices terminais
+*/
 class Aresta {
   public:
     Vertice* origem;
@@ -28,6 +33,7 @@ class Aresta {
     int prioridade;
     int vaga;
 
+    // Construtor de uma aresta
     Aresta(Vertice* origem, Vertice* destino, int prioridade, int vaga) {
       this->origem = origem;
       this->destino = destino;
@@ -35,6 +41,7 @@ class Aresta {
       this->vaga = vaga;
     }
 
+    // Operador para comparacoes
     bool operator==(const Aresta a) const {
       if (destino == a.destino) 
         if (prioridade == a.prioridade)
@@ -44,6 +51,7 @@ class Aresta {
       
     }
 
+    // Operador para comparacoes
     bool operator!=(const Aresta a) const {
       if (destino != a.destino) 
         if (prioridade != a.prioridade)
@@ -54,6 +62,10 @@ class Aresta {
     }
 };
 
+/* Classe Vertice:
+Guarda nome, lista de adjacencia e grau de cada vertice
+Usa metodo proprio para adicionar aresta entre vertices
+*/
 class Vertice {
   public:
     string nome;
@@ -66,10 +78,9 @@ class Vertice {
       this->grau = 0;
     }
 
-    /* 
-      Metodo para adicionar aresta
-      a flag 'bidirecional' indica se a aresta sera adicionada nas duas direcoes:
-      a->b e b->a ou apenas a->b
+    /*
+      Metodo para adicionar aresta entre vertice 'this' e 'b',
+      passando os parametros necessarios para o construtor da aresta
     */
     Aresta addAresta (Vertice* b, int prioridade, int vaga) {
       // cout << "Adicionando aresta entre " << nome << " e " << b->nome << "\n";
@@ -82,6 +93,7 @@ class Vertice {
       return a;
     }
     
+    // Metodo que remove aresta entre vertice 'this' e vertice 'a'
     void removeAresta(Vertice a) {
       for (auto it = lista.begin(); it != lista.end(); ++it) {
         if (*(it->destino) == a) {
@@ -91,13 +103,8 @@ class Vertice {
         }
       }
     }
-    
-    // Metodo simples para printar informacoes sobre um vertice
-    void printV () {
-      cout << nome << " " << lista.size() << " " << grau << "\n";
-    }
 
-    // Operador para comparacoes. Implementado pelo uso de std::set no programa
+    // Operador para comparacoes
     bool operator==(Vertice v) {
       if (v.nome.compare(nome) != 0)
         return false;
@@ -108,6 +115,7 @@ class Vertice {
       return true;
     }
 
+    // Operador para comparacoes
     bool operator!=(Vertice v) {
       if (v.nome.compare(nome) == 0)
         return false;
@@ -117,8 +125,10 @@ class Vertice {
       
       return true;
     }
-
-    // Funcao privada para checar se ha vertice v na lista de adjacentes do vertice
+    /* 
+      Funcao para checar se ha vertice v na lista de adjacentes do vertice
+      Usado pelo metodo Grafo::hasIncoming
+    */
     bool listHas (Vertice v) {
       for (list<Aresta>::iterator it = lista.begin(); it != lista.end(); ++it) {
         if (*(it->destino) == v) {  
@@ -129,20 +139,26 @@ class Vertice {
     }
 };
 
+/* 
+  Classe escola, usada para guardas os dados de cada escola individualmente,
+  assim como um construtor especializado para ler os dados dirato do arquivo.
+*/
 class Escola {
   public:
     string nome;
     vector<int> habilitacao;
 
+    // Construtor da escola, para retornos vazios de funcao
     Escola() {
       nome = "vazio";
     }
 
+    // Construtor que recebe uma linha inteira do arquivo de input, processa os dados e instancia o objeto
     Escola(string dados) {
       int i = 0;
       bool flag = false;
 
-      // encontra nome do professor
+      // Encontra o final do nome da escola
       while (!flag) {
         if (dados.at(i) == ')') {
           flag = true;
@@ -151,9 +167,12 @@ class Escola {
         i++;
       }
 
+      // Nome da escola eh igual ao char 1 ate o char i, encontrado anteriormente
       this->nome = dados.substr(1, i - 1);
       i++;
       flag = false;
+
+      // Analisa as habililitacoes necessarias da escola e coloca em um vetor
       while (!flag){
         if (dados.size() != i) {
           i += 2;
@@ -175,17 +194,12 @@ class Escola {
       }
       return false;
     }
-
-    void printEscola() {
-      cout << "Nome: " << this->nome << ", preferencia de professores: (" << habilitacao.size() << ") ";
-      for (auto i = habilitacao.begin(); i != habilitacao.end(); ++i) {
-        cout << *i << " ";
-      }
-      cout << "\n";
-    }
-
 };
 
+/* 
+  Classe professor, usada para guardas os dados de cada professor individualmente,
+  assim como um construtor especializado para ler os dados dirato do arquivo.
+*/
 class Professor {
   public:
     string nome;
@@ -197,11 +211,12 @@ class Professor {
       habilitacao = 0;
     }
 
+    // Construtor que recebe uma linha inteira do arquivo de input, processa os dados e instancia o objeto
     Professor(string dados) {
       int i = 0;
       bool flag = false;
 
-      // encontra nome do professor
+      // Encontra o final do nome do professor
       while (!flag) {
         if (dados.at(i) == ',') {
           flag = true;
@@ -209,31 +224,35 @@ class Professor {
         }
         i++;
       }
-      // cout << dados.substr(1, i - 1) << "\n";
+      
+      // Salva nome do professor
       this->nome = dados.substr(1, i - 1);
 
-      // encontra numero de habilitacoes do professor
+      // Salva habilitacao do professor
       i += 2;
-      // cout << dados.substr(i, 1) << "\n";
       this->habilitacao = stoi(dados.substr(i, 1));
 
-      // encontra escolar preferenciais
+      // Encontra lista de preferencia de escolas
       i += 5;
-      int j = i - 1;
-      flag = false;
-      int rank = 1;
+      int j = i - 1;  // j eh um contador de chars auxiliar, que sempre marcara o inicio de um nome de escola
+      flag = false;   // Flag para sinalizar o final do loop
+      int rank = 1;   // Rank sera um contador, sendo que a primeira posicao da lista sera o rank 1
       while (!flag) {
+        // Se encontrarmos ')' ou ',', chegamos ao final de algum nome de escola
         if (dados.at(i) == ')' || dados.at(i) == ',') {
           j++;
           prioridade pri;
           pri.nome = dados.substr(j, i - j);
           pri.rank = rank;
+          // Salva struct na lista de prioridades
           this->escolas.push_back(pri);
+          // Se encontramos um ')', chegamos ao final. A flag sera ativada e o loop encerrado
           if (dados.at(i) == ')') {
             flag = true;
           }
           rank ++;
         }
+        // Sempre que encontrarmos um espaco em branco, moveremos j para essa posicao, marcando o inicio de um nome de escola
         else if (dados.at(i) == ' ') {
           j = i;
         }
@@ -241,12 +260,19 @@ class Professor {
       }
     }
 
-    void printProfessor() {
-      cout << "Nome: " << this->nome << ", N de Habilitacoes: " << this->habilitacao << ", preferencia de escolas: (" << escolas.size() << ") ";
-      for (auto i = escolas.begin(); i != escolas.end(); ++i) {
-        cout << i->rank << " - " << i->nome << "; ";
-      }
-      cout << "\n";
+    // Comparador implementado para a funcao sort, usada na funcao 'emparelhamento'
+    bool operator<(Professor b) {
+      if (this->habilitacao > b.habilitacao)
+        return false;
+
+      if (this->habilitacao < b.habilitacao)
+        return true;
+
+      if (this->nome < b.nome)
+        return true;
+
+      return false;
+          
     }
 };
 
@@ -260,13 +286,9 @@ class Professor {
 class Grafo {
   public:
     list<Vertice> vertices;
-    list<Aresta> arestas;
     int numVertices;
 
-    // TODO checar a existencia de um vertice com dado nome
-    // TODO erro caso já exista vertice com dado nome
-    // Metodo para adicionar vertice no Grafo. 
-
+    // Metodo para adicionar no grafo um vertice de professor
     bool addVertice (Professor p) {
       Vertice v(p.nome);
       vertices.push_back(v);
@@ -274,6 +296,7 @@ class Grafo {
       return true;
     }
 
+    // Metodo para adicionar no grafo um vertice de escola
     bool addVertice (Escola e) {
       Vertice v(e.nome);
       vertices.push_back(v);
@@ -281,6 +304,7 @@ class Grafo {
       return true;
     }
 
+    // Metodo para encontrar no grafo um vertice, baseado no seu nome
     Vertice getVertice (string nome) {
       for (auto it = vertices.begin(); it != vertices.end(); ++it) {
         if (it->nome.compare(nome) == 0) {
@@ -291,7 +315,6 @@ class Grafo {
 
     // Metodo para adicionar aresta entre dois vertices determinados pelo nome
     bool addAresta(string origem, string destino, int prioridade, int vaga) {
-      // cout << "Add aresta " << origem << " " << destino << " " << prioridade << "\n";
       std::list<Vertice>::iterator it1;
       std::list<Vertice>::iterator it2;
       bool f1 = false, f2 = false;
@@ -311,14 +334,14 @@ class Grafo {
         cout << "Erro ao tentar montar aresta entre " << origem << " e " << destino << "\n"; 
         return false;
       }
-      // Adiciona aresta entre os dois vertices, com 'true' para 'bidirecional'
-      arestas.push_back(it1->addAresta(&(*it2), prioridade, vaga));
-      arestas.push_back(it2->addAresta(&(*it1), prioridade, vaga));
+      // Adiciona aresta entre os dois vertices, bidirecionalmente
+      it1->addAresta(&(*it2), prioridade, vaga);
+      it2->addAresta(&(*it1), prioridade, vaga);
 
       return true;
     }
 
-    // ! nao remove aresta da lista de arestas
+    // Metodo para remover aresta, baseado no nome dos dois vertices terminais
     bool removeAresta(string origem, string destino) {
       std::list<Vertice>::iterator it1;
       std::list<Vertice>::iterator it2;
@@ -343,6 +366,7 @@ class Grafo {
       return true;
     }
 
+    // Metodo para descobrir quantas arestas estao apontando para determinado vertice.
     int hasIncoming(Vertice v) {
       int j = 0;
       for (auto it = vertices.begin(); it != vertices.end(); ++it) {
@@ -354,19 +378,21 @@ class Grafo {
     // Printa os detalhes de cada vertice do grafo
     void printGrafo() {
       for (std::list<Vertice>::iterator it = vertices.begin(); it != vertices.end(); ++it){
-        cout << "Vertice: " << it->nome << "\n";
-        // cout << "Grau: " << it->grau << "\n";
-        cout << "Associado a: ";
+        if (it->nome == "E1") cout << "\n";
+        cout << it->nome;
+        cout << " associado a: ";
         for (std::list<Aresta>::iterator it2 = it->lista.begin(); it2 != it->lista.end(); ++it2){
-          cout << "(nome = " << it2->destino->nome << ", p = " << it2->prioridade << ", v = " << it2->vaga << ") ";
+          cout << "(nome = " << it2->destino->nome << ", preferencia = " << it2->prioridade << ", vaga = " << it2->vaga + 1 << ") ";
         }
         cout << "\n";
       }
     }
 };
 
-// Funcao que le o arquivo de entrada e salva os dados em dois vetores,
-// um contendo a lista de escolas, e o outro contendo a lista de professores
+/*
+  Funcao que le o arquivo de entrada e salva os dados em dois vetores,
+  um contendo a lista de escolas, e o outro contendo a lista de professores
+*/
 void leArquivo (string fileStr, vector<Professor>* pptr, vector<Escola>* eptr) {
   ifstream file(fileStr);
   string str;
@@ -399,32 +425,13 @@ void leArquivo (string fileStr, vector<Professor>* pptr, vector<Escola>* eptr) {
     e.push_back(esc);
   }
 
+  // Salva o conteudo processado nos ponteiros passados
   *pptr = p;
   *eptr = e;
 }
 
-// Funcao que apaga qualquer preferencia que eh impossivel alocar estavelmente
-// Exemplo: professor 1 com habilitacao 1 quer escola 2, mas escola 2 quer professores com habilitacao 3
-void apagaPreferencias(vector<Professor> *p, vector<Escola> *e) {
-  for (int i = 0; i < p->size(); i++) {
-    Professor prof = p->at(i);
-    vector<prioridade> preferencias = prof.escolas;
-    for (int j = 0; j < preferencias.size(); j++) {
-      string nomeEscola = preferencias[j].nome;
-      int numEscola = stoi(nomeEscola.erase(0, 1));
-      Escola esc = e->at(numEscola - 1);
-      if (!esc.escolaAceitaHab(prof.habilitacao)) {
-        preferencias.erase(preferencias.begin() + j);
-        j--;
-        // cout << prof.nome << " excluido da " << esc.nome << "\n";
-      }
-    }
-    p->at(i).escolas = preferencias;
-  }
-}
-
+// Funcao para encontrar determinado professor em determinado vetor, retornando a posicao dele
 int getProfessor(vector<Professor> v, string nome) {
-  // cout << nome << "\n";
   for (int i = 0; i < v.size(); i++) {
     if (v[i].nome == nome)
       return i;
@@ -432,6 +439,7 @@ int getProfessor(vector<Professor> v, string nome) {
   return -1;
 }
 
+// Funcao para encontrar determinada escola em determinado vetor, retornando o proprio objeto
 Escola getEscola(vector<Escola> e, string nome) {
   for (int i = 0; i < e.size(); i++) {
     if (e[i].nome == nome)
@@ -440,6 +448,7 @@ Escola getEscola(vector<Escola> e, string nome) {
   return Escola();
 }
 
+// Funcao que indica se determinada vaga, de determinada escola, esta ocupada ou nao
 bool isVagaOcupada (Vertice v, int vaga) {
   for (auto i = v.lista.begin(); i != v.lista.end(); i++) {
     if (i->vaga == vaga) {
@@ -449,6 +458,7 @@ bool isVagaOcupada (Vertice v, int vaga) {
   return false;
 }
 
+// Funcao que diz se determinado professor tem uma outra escola com vagas em sua lista de prioridades
 bool temEscolaDisponivel(Professor profAntigo, vector<Escola> e, Grafo g) {
   Vertice p = g.getVertice(profAntigo.nome);
   string escAssociada = p.lista.begin()->destino->nome;
@@ -456,46 +466,56 @@ bool temEscolaDisponivel(Professor profAntigo, vector<Escola> e, Grafo g) {
   for (int i = 0; i < profAntigo.escolas.size(); i++) {
     string nomeEscola = profAntigo.escolas[i].nome;
 
+    // Pula a escola em que o professor ja esta associado
+    // ? eh necessario pular ?
     if (nomeEscola != escAssociada) {
       Escola esc = getEscola(e, nomeEscola);
       Vertice v = g.getVertice(nomeEscola);
       
       for (int j = 0; j < esc.habilitacao.size(); j++) {
+        // Se o professor tiver habilitacao suficiente, e a vaga estiver desocupada, retorna true
         if (esc.habilitacao[j] <= profAntigo.habilitacao && !isVagaOcupada(v, j)) {
-          cout << "Professor " << profAntigo.nome << " encontrou vaga vazia na escola " << esc.nome << " vaga " << j << "\n";
-          // g.printGrafo();
           return true;
         }
       }
     }
   }
+  // Caso nao encontre vaga, retorna false
   return false;
 }
 
+/*
+  Funcao para decidir o 'vencedor' em uma disputa de vagas
+  O vencedor sera sempre o que mais quer a escola, se tiver a habilitacao necessaria
+  Em caso de empate, sera escolhido o com menor habilitacao (mas no minimo a necessaria)
+  Em caso de novo empate, veremos se o professor atualmente alocado (profAntigo) pode ir para outra escola com vaga vazia
+  Retorna true caso o professor desalocado ganhe o 'duelo'. Caso contrario, retorna false
+*/
 bool disputaDeVagas(Professor prof, Professor profAntigo, Escola esc, Vertice v, int vaga, int rank, vector<Escola> e, Grafo g) {
+  // Se o professor desalocado nao tiver habiltiacao o suficiente, ele eh eliminado
   if (esc.habilitacao[vaga] > prof.habilitacao)
     return false;
 
   else {
+    // Instancia aresta
     list<Aresta>::iterator disputada;
+    // Primeira vaga (vaga 0)
     if (vaga == 0) {
-      if (esc.habilitacao.size() == 2 && !isVagaOcupada(v, 1) && esc.habilitacao[1] <= prof.habilitacao) {
-        return false;
-      }
       disputada = v.lista.begin();
     }
+    // Segunda vaga (vaga 1)
     else {
       disputada = v.lista.end();
       disputada--;
     }
 
-    if (rank < disputada->prioridade || 
-      (rank == disputada->prioridade && 
-      prof.habilitacao < profAntigo.habilitacao)
-    ) {
+    // Caso o professor alocado queira menos a escola que o professor desalocado
+    // ou, em caso de empate, o professor desalocado tenha menos habilitacao, havera a substituicao
+    if (rank < disputada->prioridade || (rank == disputada->prioridade && prof.habilitacao < profAntigo.habilitacao)) {
       return true;
     }
 
+    // Segundo desempate: caso o professor alocado consiga ir para outra escola vazia
     else if (rank == disputada->prioridade && prof.habilitacao == profAntigo.habilitacao && temEscolaDisponivel(profAntigo, e, g)) {
       return true;
     }
@@ -504,6 +524,7 @@ bool disputaDeVagas(Professor prof, Professor profAntigo, Escola esc, Vertice v,
   }
 }
 
+// Descobre qual professor esta alocado em determinada vaga
 string getVagaOcupada(Vertice v, int vaga) {
   for (auto i = v.lista.begin(); i != v.lista.end(); i++)  {
     if (i->vaga == vaga) {
@@ -513,80 +534,110 @@ string getVagaOcupada(Vertice v, int vaga) {
   return "";
 }
 
-void emparelhamento(vector<Professor> desalocados, vector<Escola> e, Grafo *g) {
+// Ve se a escola esta com todos as vagas desocupadas
+bool escolaVazia (Vertice v, Grafo g) {
+  if(g.hasIncoming(v) == 0) {
+    return true;
+  }
+  return false;
+}
+
+// Funcao faz emparelhamento maximo, alocando professores apenas para suas escolas desejadas
+vector<Professor> emparelhamento(vector<Professor> * professores, vector<Escola> e, Grafo *g) {
+  vector<Professor> desalocados = *professores;
+
+  // Ordena vetor de professores na ordem crescente de habilitacao
+  sort(desalocados.begin(), desalocados.end());
   vector<Professor> alocados;
-  bool flag = false;
-  while (!flag) {
-    flag = true;
-    cout << "iteracao do while \n";
 
-    for (int i = 0; i < desalocados.size(); i++) {
-      // cout << "iteracao do for i \n";
-      Professor prof = desalocados[i];
-      bool alocado = false;
+  // For loop pelos professores desalocados
+  for (int i = 0; i < desalocados.size(); i++) {
+    Professor prof = desalocados[i];
+    bool alocado = false;
 
-      for (int j = 0; j < prof.escolas.size() && !alocado; j++) {
-        // cout << "iteracao do for j \n";
+    // For loop pela lista de prioridade de cada professor
+    for (int j = 0; j < prof.escolas.size() && !alocado; j++) {
+      prioridade pri = prof.escolas[j];
+      Escola esc = getEscola(e, pri.nome);
+      Vertice v = g->getVertice(esc.nome);
 
-        prioridade pri = prof.escolas[j];
-        Escola esc = getEscola(e, pri.nome);
-        Vertice v = g->getVertice(esc.nome);
 
-        for (int k = 0; k < esc.habilitacao.size() && !alocado; k++) {
-          // g->printGrafo();
-          // cout << "iteracao do for k \n";
-          if (esc.habilitacao[k] <= prof.habilitacao) {
-            if (!isVagaOcupada(v, k)) {
-              desalocados.erase(desalocados.begin() + i);
+      bool inv = false;
+      // Caso a segunda vaga da escola seja apropriada para o professor, inverteremos o proximo loop
+      if (esc.habilitacao.size() == 2 && esc.habilitacao[0] < esc.habilitacao[1]) {
+        inv = true;
+      }
+
+      // For loop pela vaga de cada escola
+      for (int l = 0; l < esc.habilitacao.size() && !alocado; l++) {
+        int k;                          // Variavel auxiliar para inverter o loop
+        if (inv && l == 0) k = 1;       // Caso inv esteja true, inverteremos o loop
+        else if (inv && l == 1) k = 0;  
+        else k = l;                     // Caso contrario, o loop ocorrera normalmente
+        
+        // Se o professor tiver o minimo de habilitacao, veremos se ele tera concorrencia para a vaga
+        if (esc.habilitacao[k] <= prof.habilitacao) {
+          // Caso a vaga esteja vazia, o professor ocupara a vaga
+          if (!isVagaOcupada(v, k)) {
+            desalocados.erase(desalocados.begin() + i);
+            alocados.push_back(prof);
+            g->addAresta(prof.nome, esc.nome, pri.rank, k);
+
+            i--;
+            alocado = true;
+          }
+          // Caso a vaga nao esteja vazia, veremos qual professor permanecera nela
+          else {
+            int pos = getProfessor(alocados, getVagaOcupada(v, k));
+            Professor profAntigo = alocados[pos];
+            // Se o professor desalocado for mais apropriado para a vaga que o alocado, havera uma troca
+            if (disputaDeVagas(prof, profAntigo, esc, v, k, pri.rank, e, *g)) {
+              prof.escolas.erase(prof.escolas.begin() + j);
+              alocados.erase(alocados.begin() + pos);
+              // O professor recem-desalocado sera o proximo a ser avaliado
+              desalocados[i] = profAntigo;
+              g->removeAresta(esc.nome, profAntigo.nome);
+
               alocados.push_back(prof);
               g->addAresta(prof.nome, esc.nome, pri.rank, k);
-
               i--;
+              // Encerra loops k e j
               alocado = true;
-              // flag = false;
-            }
-            else {
-              int pos = getProfessor(alocados, getVagaOcupada(v, k));
-              Professor profAntigo = alocados[pos];
-              if (disputaDeVagas(prof, profAntigo, esc, v, k, pri.rank, e, *g)) {
-                cout << "Professor " << prof.nome << " pega a vaga do professor " << profAntigo.nome << "\n";
-                prof.escolas.erase(prof.escolas.begin() + j);
-                alocados.erase(alocados.begin() + pos);
-                // desalocados.push_back(profAntigo);
-                desalocados[i] = profAntigo;
-                g->removeAresta(esc.nome, profAntigo.nome);
-
-                // desalocados.erase(desalocados.begin() + i);
-                alocados.push_back(prof);
-                g->addAresta(prof.nome, esc.nome, pri.rank, k);
-                i--;
-                alocado = true;
-                // flag = false;
-              }
             }
           }
         }
       }
     }
   }
+  
+  *professores = desalocados;
+  return alocados;
+}
 
-  cout << "Professores satisfeitos: " << alocados.size() << "\n";
+vector<Professor> alocaSobras(vector<Professor> * professores, vector<Professor> alocados, vector<Escola> e, Grafo *g) {
+  vector<Professor> desalocados = *professores;
 
-  for (int i = 0; i < desalocados.size(); i++) {
-      // cout << "iteracao do for i \n";
+  // Ordena vetor de professores na ordem crescente de habilitacao
+  sort(desalocados.begin(), desalocados.end());
+
+  // Faz 2 loops. O primeiro preenchera todas as escolas vazias, o segundo alocara os professores que sobrarem
+  for (int l = 0; l < 2; l++) {
+    // For loop pelos professores desalocados
+    for (int i = 0; i < desalocados.size(); i++) {
       Professor prof = desalocados[i];
       bool alocado = false;
 
+      // For loop por todas as escolas
       for (int j = 0; j < e.size() && !alocado; j++) {
-        // cout << "iteracao do for j \n";
-
         Escola esc = e[j];
         Vertice v = g->getVertice(esc.nome);
-
+        
+        // For loop por todas as vagas da escola
         for (int k = 0; k < esc.habilitacao.size() && !alocado; k++) {
-          // g->printGrafo();
-          // cout << "iteracao do for k \n";
-          if (esc.habilitacao[k] <= prof.habilitacao) {
+          // Se estivermos no primeiro loop, apenas avaliaremos as escolas vazias
+          // Caso for o segundo loop, avaliaremos todas as vagas
+          if (!(l == 0 && !escolaVazia(v, *g)) && esc.habilitacao[k] <= prof.habilitacao) {
+            // Caso a vaga esteja vazia, o professor ocupara a vaga
             if (!isVagaOcupada(v, k)) {
               desalocados.erase(desalocados.begin() + i);
               alocados.push_back(prof);
@@ -594,31 +645,31 @@ void emparelhamento(vector<Professor> desalocados, vector<Escola> e, Grafo *g) {
 
               i--;
               alocado = true;
-              // flag = false;
             }
+            // Caso a vaga nao esteja vazia, veremos qual professor permanecera nela
             else {
               int pos = getProfessor(alocados, getVagaOcupada(v, k));
               Professor profAntigo = alocados[pos];
               if (disputaDeVagas(prof, profAntigo, esc, v, k, 5, e, *g)) {
-                cout << "!! Professor " << prof.nome << " pega a vaga do professor " << profAntigo.nome << "\n";
                 alocados.erase(alocados.begin() + pos);
-                // desalocados.push_back(profAntigo);
+                // O professor recem-desalocado sera o proximo a ser avaliado
                 desalocados[i] = profAntigo;
-                g->removeAresta(esc.nome, profAntigo.nome);
 
-                // desalocados.erase(desalocados.begin() + i);
+                g->removeAresta(esc.nome, profAntigo.nome);
                 alocados.push_back(prof);
                 g->addAresta(prof.nome, esc.nome, 5, k);
                 i--;
+                // Encerra loops k e j
                 alocado = true;
-                // flag = false;
               }
             }
           }
         }
       }
     }
-  cout << "Professores alocados: " << alocados.size() << "\n";
+  }
+  *professores = desalocados;
+  return alocados;
 }
 
 int main () {
@@ -626,14 +677,6 @@ int main () {
   vector<Escola> e;
 
   leArquivo("entradaProjTag2.txt", &p, &e);
-
-  // printProfessores(p);
-  // printEscolas(e);
-
-  // apagaPreferencias(&p, &e);
-  
-  // printProfessores(p);
-  // printEscolas(e);
 
   Grafo g;
   for (int i = 0; i < 100; i++) {
@@ -644,10 +687,16 @@ int main () {
     g.addVertice(e[i]);
   }
 
-  emparelhamento(p, e, &g);
+  vector<Professor> p2;
+  vector<Professor> p3;
+  p2 = emparelhamento(&p, e, &g);
+  p3 = alocaSobras(&p, p2, e, &g);
+
   g.printGrafo();
 
-
+  cout << "\n";
+  cout << "Professores satisfeitos: " << p2.size() << "\n";
+  cout << "Professores alocados: " << p3.size() << "\n";
 
   return 0;
 }
