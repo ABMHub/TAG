@@ -72,6 +72,12 @@ class Vertice {
     list<Aresta> lista;
     int grau;
 
+    // Construtor para retornos vazios;
+    Vertice() {
+      this->nome = "Vazio";
+      this->grau = 0;
+    }
+
     // Construtor
     Vertice(string nome) {
       this->nome = nome;
@@ -155,7 +161,7 @@ class Escola {
 
     // Construtor que recebe uma linha inteira do arquivo de input, processa os dados e instancia o objeto
     Escola(string dados) {
-      int i = 0;
+      unsigned int i = 0;
       bool flag = false;
 
       // Encontra o final do nome da escola
@@ -187,7 +193,7 @@ class Escola {
 
     // Metodo para saber se determinada escola aceita professor com determinada haiblitacao
     bool escolaAceitaHab(int h) {
-      for(int i = 0; i < habilitacao.size(); i++) {
+      for(unsigned int i = 0; i < habilitacao.size(); i++) {
         if (h >= habilitacao[i]) {
           return true;
         }
@@ -311,6 +317,7 @@ class Grafo {
           return *it;
         }
       }
+      return Vertice();
     }
 
     // Metodo para adicionar aresta entre dois vertices determinados pelo nome
@@ -432,7 +439,7 @@ void leArquivo (string fileStr, vector<Professor>* pptr, vector<Escola>* eptr) {
 
 // Funcao para encontrar determinado professor em determinado vetor, retornando a posicao dele
 int getProfessor(vector<Professor> v, string nome) {
-  for (int i = 0; i < v.size(); i++) {
+  for (unsigned int i = 0; i < v.size(); i++) {
     if (v[i].nome == nome)
       return i;
   }
@@ -441,7 +448,7 @@ int getProfessor(vector<Professor> v, string nome) {
 
 // Funcao para encontrar determinada escola em determinado vetor, retornando o proprio objeto
 Escola getEscola(vector<Escola> e, string nome) {
-  for (int i = 0; i < e.size(); i++) {
+  for (unsigned int i = 0; i < e.size(); i++) {
     if (e[i].nome == nome)
       return e[i];
   }
@@ -463,7 +470,7 @@ bool temEscolaDisponivel(Professor profAntigo, vector<Escola> e, Grafo g) {
   Vertice p = g.getVertice(profAntigo.nome);
   string escAssociada = p.lista.begin()->destino->nome;
 
-  for (int i = 0; i < profAntigo.escolas.size(); i++) {
+  for (unsigned int i = 0; i < profAntigo.escolas.size(); i++) {
     string nomeEscola = profAntigo.escolas[i].nome;
 
     // Pula a escola em que o professor ja esta associado
@@ -472,7 +479,7 @@ bool temEscolaDisponivel(Professor profAntigo, vector<Escola> e, Grafo g) {
       Escola esc = getEscola(e, nomeEscola);
       Vertice v = g.getVertice(nomeEscola);
       
-      for (int j = 0; j < esc.habilitacao.size(); j++) {
+      for (unsigned int j = 0; j < esc.habilitacao.size(); j++) {
         // Se o professor tiver habilitacao suficiente, e a vaga estiver desocupada, retorna true
         if (esc.habilitacao[j] <= profAntigo.habilitacao && !isVagaOcupada(v, j)) {
           return true;
@@ -551,12 +558,12 @@ vector<Professor> emparelhamento(vector<Professor> * professores, vector<Escola>
   vector<Professor> alocados;
 
   // For loop pelos professores desalocados
-  for (int i = 0; i < desalocados.size(); i++) {
+  for (unsigned int i = 0; i < desalocados.size(); i++) {
     Professor prof = desalocados[i];
     bool alocado = false;
 
     // For loop pela lista de prioridade de cada professor
-    for (int j = 0; j < prof.escolas.size() && !alocado; j++) {
+    for (unsigned int j = 0; j < prof.escolas.size() && !alocado; j++) {
       prioridade pri = prof.escolas[j];
       Escola esc = getEscola(e, pri.nome);
       Vertice v = g->getVertice(esc.nome);
@@ -569,7 +576,7 @@ vector<Professor> emparelhamento(vector<Professor> * professores, vector<Escola>
       }
 
       // For loop pela vaga de cada escola
-      for (int l = 0; l < esc.habilitacao.size() && !alocado; l++) {
+      for (unsigned int l = 0; l < esc.habilitacao.size() && !alocado; l++) {
         int k;                          // Variavel auxiliar para inverter o loop
         if (inv && l == 0) k = 1;       // Caso inv esteja true, inverteremos o loop
         else if (inv && l == 1) k = 0;  
@@ -621,19 +628,19 @@ vector<Professor> alocaSobras(vector<Professor> * professores, vector<Professor>
   sort(desalocados.begin(), desalocados.end());
 
   // Faz 2 loops. O primeiro preenchera todas as escolas vazias, o segundo alocara os professores que sobrarem
-  for (int l = 0; l < 2; l++) {
+  for (unsigned int l = 0; l < 2; l++) {
     // For loop pelos professores desalocados
-    for (int i = 0; i < desalocados.size(); i++) {
+    for (unsigned int i = 0; i < desalocados.size(); i++) {
       Professor prof = desalocados[i];
       bool alocado = false;
 
       // For loop por todas as escolas
-      for (int j = 0; j < e.size() && !alocado; j++) {
+      for (unsigned int j = 0; j < e.size() && !alocado; j++) {
         Escola esc = e[j];
         Vertice v = g->getVertice(esc.nome);
         
         // For loop por todas as vagas da escola
-        for (int k = 0; k < esc.habilitacao.size() && !alocado; k++) {
+        for (unsigned int k = 0; k < esc.habilitacao.size() && !alocado; k++) {
           // Se estivermos no primeiro loop, apenas avaliaremos as escolas vazias
           // Caso for o segundo loop, avaliaremos todas as vagas
           if (!(l == 0 && !escolaVazia(v, *g)) && esc.habilitacao[k] <= prof.habilitacao) {
