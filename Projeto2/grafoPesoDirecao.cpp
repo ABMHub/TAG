@@ -620,7 +620,10 @@ vector<Professor> emparelhamento(vector<Professor> * professores, vector<Escola>
   *professores = desalocados;
   return alocados;
 }
-
+/* 
+  Funcao para alocar todos os professores que sobraram.
+  Alocara todos com prioridade 5, ou seja, prioridade menor que a menor prioridade da lista de prioridade
+*/
 vector<Professor> alocaSobras(vector<Professor> * professores, vector<Professor> alocados, vector<Escola> e, Grafo *g) {
   vector<Professor> desalocados = *professores;
 
