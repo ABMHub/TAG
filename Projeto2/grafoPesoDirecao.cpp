@@ -180,7 +180,7 @@ class Escola {
 
       // Analisa as habililitacoes necessarias da escola e coloca em um vetor
       while (!flag){
-        if (dados.size() != i) {
+        if (dados.size() > i+2) {
           i += 2;
           habilitacao.push_back(stoi(dados.substr(i, 1)));
           i += 2;
