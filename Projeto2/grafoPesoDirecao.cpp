@@ -583,7 +583,8 @@ vector<Professor> emparelhamento(vector<Professor> * professores, vector<Escola>
         else k = l;                     // Caso contrario, o loop ocorrera normalmente
         
         // Se o professor tiver o minimo de habilitacao, veremos se ele tera concorrencia para a vaga
-        if (esc.habilitacao[k] <= prof.habilitacao) {
+        // Se o professor for de habilitacao 3, ele entrara apenas em escolas que requerem habilitacao 3
+        if (esc.habilitacao[k] <= prof.habilitacao && !(prof.habilitacao == 3 && esc.habilitacao[k] < 3)) {
           // Caso a vaga esteja vazia, o professor ocupara a vaga
           if (!isVagaOcupada(v, k)) {
             desalocados.erase(desalocados.begin() + i);
@@ -686,8 +687,10 @@ int main () {
   vector<Professor> p;
   vector<Escola> e;
 
+  // Chama funcao de ler arquivo, passando como parametros os ponteiros dos vetores de prof e escola
   leArquivo("entradaProjTag2.txt", &p, &e);
 
+  // Inicializa vertices do grafo. 100 para professores, 50 para escolas
   Grafo g;
   for (int i = 0; i < 100; i++) {
     g.addVertice(p[i]);
@@ -697,16 +700,31 @@ int main () {
     g.addVertice(e[i]);
   }
 
+  // Variaveis para salvar os dois estados do programa
+  vector<Professor> p1;
   vector<Professor> p2;
-  vector<Professor> p3;
-  p2 = emparelhamento(&p, e, &g);
-  p3 = alocaSobras(&p, p2, e, &g);
+  Grafo g1;
 
+  // Salva estado antes de alocar os professores sobrando
+  p1 = emparelhamento(&p, e, &g);
+  // Salva grafo antes de alocar os professores que sobraram
+  g1 = g;
+  // Salva estado pos-termino do programa
+  p2 = alocaSobras(&p, p1, e, &g);
+
+  cout << "\n|| Emparelhamento utilizando apenas a lista de preferencia ||\n\n";
+  g1.printGrafo();
+
+  cout << "\n";
+  cout << "Professores satisfeitos: " << p1.size() << "\n";
+  cout << "Professores alocados: " << p1.size() << "\n";
+
+  cout << "\n|| Emparelhamento alocando todos os professores que restam ||\n\n";
   g.printGrafo();
 
   cout << "\n";
-  cout << "Professores satisfeitos: " << p2.size() << "\n";
-  cout << "Professores alocados: " << p3.size() << "\n";
+  cout << "Professores satisfeitos: " << p1.size() << "\n";
+  cout << "Professores alocados: " << p2.size() << "\n";
 
   return 0;
 }
