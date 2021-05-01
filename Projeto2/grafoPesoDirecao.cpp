@@ -556,9 +556,23 @@ vector<Professor> emparelhamento(vector<Professor> * professores, vector<Escola>
   // Ordena vetor de professores na ordem crescente de habilitacao
   sort(desalocados.begin(), desalocados.end());
   vector<Professor> alocados;
+  bool flag = false;
 
   // For loop pelos professores desalocados
   for (unsigned int i = 0; i < desalocados.size(); i++) {
+
+    // pedaco de codigo para printar o estado do grafo a cada 40 professores analisados.
+    // como o codigo repete o 'i' varias vezes, quando professores sao substituidos,
+    // essa logica e necessaria para evitar um desnecessario numero de prints
+    if (alocados.size() % 25 == 0 && alocados.size() != 0) {
+      flag = true;
+    }
+    else if (flag == true) {
+      cout << "\n -----------------" << alocados.size() << " professores alocados. -------------------- \n";
+      g->printGrafo();
+      flag = false;
+    }
+
     Professor prof = desalocados[i];
     bool alocado = false;
 
@@ -712,14 +726,15 @@ int main () {
   // Salva estado pos-termino do programa
   p2 = alocaSobras(&p, p1, e, &g);
 
-  cout << "\n|| Emparelhamento utilizando apenas a lista de preferencia ||\n\n";
+  cout << "\n----------- FIM DO PRIMEIRO LOOP. RESULTADO: -----------\n";
+  cout << "\n----------- Emparelhamento utilizando apenas a lista de preferencia -----------\n\n";
   g1.printGrafo();
 
   cout << "\n";
   cout << "Professores satisfeitos: " << p1.size() << "\n";
   cout << "Professores alocados: " << p1.size() << "\n";
 
-  cout << "\n|| Emparelhamento alocando todos os professores que restam ||\n\n";
+  cout << "\n----------- Emparelhamento alocando todos os professores que restam -----------\n\n";
   g.printGrafo();
 
   cout << "\n";
