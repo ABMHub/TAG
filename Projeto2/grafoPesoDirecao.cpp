@@ -1,3 +1,10 @@
+/*
+  Aluno: Lucas de Almeida Bandeira Macedo
+  Matricula: 190047089
+  Professor: Dibio
+  Turma: Teoria e Aplicacao de Grafos, Turma A 2020/2
+*/
+
 #include <algorithm>
 #include <iostream>
 #include <fstream>
